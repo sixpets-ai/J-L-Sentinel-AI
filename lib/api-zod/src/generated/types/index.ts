@@ -6,4 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./activityItem";
+export * from "./analyzeIncidentBody";
+export * from "./createGeminiConversationBody";
+export * from "./createReportBody";
+export * from "./geminiConversation";
+export * from "./geminiConversationWithMessages";
+export * from "./geminiError";
+export * from "./geminiMessage";
+export * from "./generateGeminiImageBody";
+export * from "./generateGeminiImageResponse";
 export * from "./healthStatus";
+export * from "./incidentAnalysis";
+export * from "./incidentReport";
+export * from "./operationalStats";
+export * from "./sendGeminiMessageBody";

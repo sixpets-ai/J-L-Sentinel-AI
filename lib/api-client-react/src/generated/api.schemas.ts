@@ -8,3 +8,106 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface AnalyzeIncidentBody {
+  tipo: string;
+  descripcion?: string;
+  sector?: string;
+  folio: string;
+  agente?: string;
+}
+
+export interface IncidentAnalysis {
+  folio: string;
+  agente: string;
+  analisis: string;
+  nivelRiesgo: string;
+  accionesRecomendadas: string[];
+  unidadesRequeridas: number;
+  protocolo: string;
+  coordinacion: string;
+}
+
+export interface IncidentReport {
+  id: number;
+  folio: string;
+  tipo: string;
+  descripcion?: string;
+  sector?: string;
+  latitud?: number;
+  longitud?: number;
+  agente: string;
+  nivelRiesgo?: string;
+  analisis?: string;
+  createdAt: string;
+}
+
+export interface CreateReportBody {
+  folio: string;
+  tipo: string;
+  descripcion?: string;
+  sector?: string;
+  latitud?: number;
+  longitud?: number;
+  agente: string;
+  nivelRiesgo?: string;
+  analisis?: string;
+}
+
+export interface ActivityItem {
+  time: string;
+  color: string;
+  message: string;
+}
+
+export interface OperationalStats {
+  totalReports: number;
+  criticalAlerts: number;
+  activeUnits: number;
+  resolvedToday: number;
+  avgResponseMinutes: number;
+  topIncidentType: string;
+  recentActivity: ActivityItem[];
+}
+
+export interface GeminiConversation {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+export interface GeminiMessage {
+  id: number;
+  conversationId: number;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateGeminiConversationBody {
+  title: string;
+}
+
+export interface SendGeminiMessageBody {
+  content: string;
+}
+
+export interface GeminiConversationWithMessages {
+  id: number;
+  title: string;
+  createdAt: string;
+  messages: GeminiMessage[];
+}
+
+export interface GenerateGeminiImageBody {
+  prompt: string;
+}
+
+export interface GenerateGeminiImageResponse {
+  b64_json: string;
+  mimeType: string;
+}
+
+export interface GeminiError {
+  error: string;
+}

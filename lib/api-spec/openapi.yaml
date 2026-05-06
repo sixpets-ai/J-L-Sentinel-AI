@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: santi
+    description: SANTI Centro de Mando Operativo
+  - name: gemini
+    description: Gemini AI chat and image operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,205 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /santi/analyze:
+    post:
+      operationId: analyzeIncident
+      tags: [santi]
+      summary: Analyze incident with Gemini AI and generate tactical report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeIncidentBody"
+      responses:
+        "200":
+          description: AI tactical analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentAnalysis"
+
+  /santi/reports:
+    get:
+      operationId: listReports
+      tags: [santi]
+      summary: List all incident reports
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IncidentReport"
+    post:
+      operationId: createReport
+      tags: [santi]
+      summary: Create a new incident report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportBody"
+      responses:
+        "201":
+          description: Created report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncidentReport"
+
+  /santi/stats:
+    get:
+      operationId: getStats
+      tags: [santi]
+      summary: Get operational statistics
+      responses:
+        "200":
+          description: Operational stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationalStats"
+
+  /gemini/conversations:
+    get:
+      operationId: listGeminiConversations
+      tags: [gemini]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeminiConversation"
+    post:
+      operationId: createGeminiConversation
+      tags: [gemini]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGeminiConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiConversation"
+  /gemini/conversations/{id}:
+    get:
+      operationId: getGeminiConversation
+      tags: [gemini]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiError"
+    delete:
+      operationId: deleteGeminiConversation
+      tags: [gemini]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeminiError"
+  /gemini/conversations/{id}/messages:
+    get:
+      operationId: listGeminiMessages
+      tags: [gemini]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeminiMessage"
+    post:
+      operationId: sendGeminiMessage
+      tags: [gemini]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendGeminiMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+  /gemini/generate-image:
+    post:
+      operationId: generateGeminiImage
+      tags: [gemini]
+      summary: Generate an image from a text prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateGeminiImageBody"
+      responses:
+        "200":
+          description: Generated image data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateGeminiImageResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +237,243 @@ components:
       required:
         - status
 
+    AnalyzeIncidentBody:
+      type: object
+      properties:
+        tipo:
+          type: string
+        descripcion:
+          type: string
+        sector:
+          type: string
+        folio:
+          type: string
+        agente:
+          type: string
+      required:
+        - tipo
+        - folio
+
+    IncidentAnalysis:
+      type: object
+      properties:
+        folio:
+          type: string
+        agente:
+          type: string
+        analisis:
+          type: string
+        nivelRiesgo:
+          type: string
+        accionesRecomendadas:
+          type: array
+          items:
+            type: string
+        unidadesRequeridas:
+          type: integer
+        protocolo:
+          type: string
+        coordinacion:
+          type: string
+      required:
+        - folio
+        - agente
+        - analisis
+        - nivelRiesgo
+        - accionesRecomendadas
+        - unidadesRequeridas
+        - protocolo
+        - coordinacion
+
+    IncidentReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        folio:
+          type: string
+        tipo:
+          type: string
+        descripcion:
+          type: string
+        sector:
+          type: string
+        latitud:
+          type: number
+        longitud:
+          type: number
+        agente:
+          type: string
+        nivelRiesgo:
+          type: string
+        analisis:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - folio
+        - tipo
+        - agente
+        - createdAt
+
+    CreateReportBody:
+      type: object
+      properties:
+        folio:
+          type: string
+        tipo:
+          type: string
+        descripcion:
+          type: string
+        sector:
+          type: string
+        latitud:
+          type: number
+        longitud:
+          type: number
+        agente:
+          type: string
+        nivelRiesgo:
+          type: string
+        analisis:
+          type: string
+      required:
+        - folio
+        - tipo
+        - agente
+
+    OperationalStats:
+      type: object
+      properties:
+        totalReports:
+          type: integer
+        criticalAlerts:
+          type: integer
+        activeUnits:
+          type: integer
+        resolvedToday:
+          type: integer
+        avgResponseMinutes:
+          type: number
+        topIncidentType:
+          type: string
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"
+      required:
+        - totalReports
+        - criticalAlerts
+        - activeUnits
+        - resolvedToday
+        - avgResponseMinutes
+        - topIncidentType
+        - recentActivity
+
+    ActivityItem:
+      type: object
+      properties:
+        time:
+          type: string
+        color:
+          type: string
+        message:
+          type: string
+      required:
+        - time
+        - color
+        - message
+
+    GeminiConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - createdAt
+    GeminiMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - conversationId
+        - role
+        - content
+        - createdAt
+    CreateGeminiConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required:
+        - title
+    SendGeminiMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    GeminiConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeminiMessage"
+      required:
+        - id
+        - title
+        - createdAt
+        - messages
+    GenerateGeminiImageBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+      required:
+        - prompt
+    GenerateGeminiImageResponse:
+      type: object
+      properties:
+        b64_json:
+          type: string
+        mimeType:
+          type: string
+      required:
+        - b64_json
+        - mimeType
+    GeminiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

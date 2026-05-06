@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "SANTI · Centro de Mando Operativo"
+version = "1.0.0"
+id = "artifacts/santi"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23210
+
+[services.development]
+run = "pnpm --filter @workspace/santi run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/santi", "run", "build" ]
+publicDir = "artifacts/santi/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23210"
+BASE_PATH = "/"

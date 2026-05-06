@@ -14,3 +14,166 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Analyze incident with Gemini AI and generate tactical report
+ */
+export const AnalyzeIncidentBody = zod.object({
+  tipo: zod.string(),
+  descripcion: zod.string().optional(),
+  sector: zod.string().optional(),
+  folio: zod.string(),
+  agente: zod.string().optional(),
+});
+
+export const AnalyzeIncidentResponse = zod.object({
+  folio: zod.string(),
+  agente: zod.string(),
+  analisis: zod.string(),
+  nivelRiesgo: zod.string(),
+  accionesRecomendadas: zod.array(zod.string()),
+  unidadesRequeridas: zod.number(),
+  protocolo: zod.string(),
+  coordinacion: zod.string(),
+});
+
+/**
+ * @summary List all incident reports
+ */
+export const ListReportsResponseItem = zod.object({
+  id: zod.number(),
+  folio: zod.string(),
+  tipo: zod.string(),
+  descripcion: zod.string().optional(),
+  sector: zod.string().optional(),
+  latitud: zod.number().optional(),
+  longitud: zod.number().optional(),
+  agente: zod.string(),
+  nivelRiesgo: zod.string().optional(),
+  analisis: zod.string().optional(),
+  createdAt: zod.coerce.date(),
+});
+export const ListReportsResponse = zod.array(ListReportsResponseItem);
+
+/**
+ * @summary Create a new incident report
+ */
+export const CreateReportBody = zod.object({
+  folio: zod.string(),
+  tipo: zod.string(),
+  descripcion: zod.string().optional(),
+  sector: zod.string().optional(),
+  latitud: zod.number().optional(),
+  longitud: zod.number().optional(),
+  agente: zod.string(),
+  nivelRiesgo: zod.string().optional(),
+  analisis: zod.string().optional(),
+});
+
+/**
+ * @summary Get operational statistics
+ */
+export const GetStatsResponse = zod.object({
+  totalReports: zod.number(),
+  criticalAlerts: zod.number(),
+  activeUnits: zod.number(),
+  resolvedToday: zod.number(),
+  avgResponseMinutes: zod.number(),
+  topIncidentType: zod.string(),
+  recentActivity: zod.array(
+    zod.object({
+      time: zod.string(),
+      color: zod.string(),
+      message: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary List all conversations
+ */
+export const ListGeminiConversationsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListGeminiConversationsResponse = zod.array(
+  ListGeminiConversationsResponseItem,
+);
+
+/**
+ * @summary Create a new conversation
+ */
+export const CreateGeminiConversationBody = zod.object({
+  title: zod.string(),
+});
+
+/**
+ * @summary Get conversation with messages
+ */
+export const GetGeminiConversationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetGeminiConversationResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  createdAt: zod.coerce.date(),
+  messages: zod.array(
+    zod.object({
+      id: zod.number(),
+      conversationId: zod.number(),
+      role: zod.string(),
+      content: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete a conversation
+ */
+export const DeleteGeminiConversationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List messages in a conversation
+ */
+export const ListGeminiMessagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListGeminiMessagesResponseItem = zod.object({
+  id: zod.number(),
+  conversationId: zod.number(),
+  role: zod.string(),
+  content: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListGeminiMessagesResponse = zod.array(
+  ListGeminiMessagesResponseItem,
+);
+
+/**
+ * @summary Send a message and receive an AI response (SSE stream)
+ */
+export const SendGeminiMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SendGeminiMessageBody = zod.object({
+  content: zod.string(),
+});
+
+/**
+ * @summary Generate an image from a text prompt
+ */
+export const GenerateGeminiImageBody = zod.object({
+  prompt: zod.string(),
+});
+
+export const GenerateGeminiImageResponse = zod.object({
+  b64_json: zod.string(),
+  mimeType: zod.string(),
+});
