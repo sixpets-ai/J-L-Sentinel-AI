@@ -3,303 +3,433 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SANTI · Centro de Mando Operativo · Temixco 2026</title>
+<title>SANTI NEXUS · Centro de Mando Operativo · Temixco 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+/* ══ RESET & BASE ══════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
 html,body{height:100%;overflow:hidden;font-family:'Rajdhani',sans-serif;background:#000509;color:#C8D8E8}
-::-webkit-scrollbar{width:3px;height:3px}
+button{font-family:'Rajdhani',sans-serif}
+input,select,textarea{font-family:'Rajdhani',sans-serif}
+::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:rgba(200,168,75,.15);border-radius:2px}
 
-/* ── Layout ── */
-#app{height:100vh;display:flex;flex-direction:column}
-header{height:52px;flex-shrink:0;display:flex;align-items:center;padding:0 16px;gap:14px;background:rgba(1,8,20,.97);border-bottom:1px solid rgba(200,168,75,.1);position:relative;z-index:500}
-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,.25) 30%,rgba(200,168,75,.25) 70%,transparent)}
-.body{flex:1;display:grid;grid-template-columns:260px 1fr 260px;overflow:hidden}
+/* ══ WELCOME SCREEN ════════════════════════════════════════ */
+#welcomeScreen{position:fixed;inset:0;z-index:9000;background:#000509;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.welcome-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(10,79,212,.08) 0%,transparent 70%);pointer-events:none}
+.welcome-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(200,168,75,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,75,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.welcome-inner{position:relative;text-align:center;z-index:1;padding:40px}
+.welcome-shield{font-size:72px;margin-bottom:20px;animation:shield-pulse 2s ease-in-out infinite;display:block}
+.welcome-santi{font-family:'Orbitron',monospace;font-weight:900;font-size:56px;letter-spacing:10px;background:linear-gradient(90deg,#8A6A20,#C8A84B,#E2C46A,#C8A84B,#8A6A20);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gold-sweep 3s linear infinite}
+.welcome-nexus{font-family:'Orbitron',monospace;font-weight:400;font-size:18px;letter-spacing:16px;color:#1E88E5;margin-top:-6px;margin-bottom:24px}
+.welcome-divider{width:280px;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,.4),transparent);margin:0 auto 18px}
+.welcome-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#2A4A6A;letter-spacing:3px;margin-bottom:6px}
+.welcome-loc{font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;letter-spacing:2px;margin-bottom:32px}
+.welcome-voice-box{background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.1);border-radius:10px;padding:12px 24px;margin-bottom:28px;min-width:340px;min-height:42px;display:flex;align-items:center;justify-content:center;gap:10px}
+.welcome-voice-dot{width:6px;height:6px;border-radius:50%;background:#00E5FF;box-shadow:0 0 8px #00E5FF;animation:pulse-dot 1.2s infinite;flex-shrink:0}
+.welcome-voice-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:#00E5FF;letter-spacing:.5px;text-align:left}
+.welcome-btn{padding:14px 48px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:999px;cursor:pointer;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:3px;color:#000;transition:all .3s;box-shadow:0 0 30px rgba(200,168,75,.2)}
+.welcome-btn:hover{transform:scale(1.04);box-shadow:0 0 50px rgba(200,168,75,.4)}
+.welcome-version{margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:7px;color:#1A2A3A;letter-spacing:2px}
+
+/* ══ LOGIN SCREEN ══════════════════════════════════════════ */
+#loginScreen{position:fixed;inset:0;z-index:8000;display:none;align-items:center;justify-content:center;background:rgba(0,5,9,.96);backdrop-filter:blur(10px)}
+.login-box{width:380px;background:#040F1D;border:1px solid rgba(200,168,75,.2);border-radius:18px;padding:32px;text-align:center}
+.login-shield{font-size:36px;margin-bottom:14px}
+.login-title{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;letter-spacing:4px;color:#C8A84B;margin-bottom:4px}
+.login-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;letter-spacing:2px;margin-bottom:24px}
+.l-inp{width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(200,168,75,.15);border-radius:8px;padding:11px 14px;color:#C8D8E8;font-size:13px;outline:none;margin-bottom:10px;transition:border-color .2s}
+.l-inp:focus{border-color:rgba(200,168,75,.35)}
+.l-inp option{background:#010D1A}
+.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:8px;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:#000;margin-top:4px;transition:all .2s}
+.login-btn:hover{opacity:.9;transform:translateY(-1px)}
+.login-note{margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:7px;color:#1A2A3A;letter-spacing:.5px}
+
+/* ══ API KEY MODAL ═════════════════════════════════════════ */
+#apikeyModal{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);backdrop-filter:blur(12px)}
+.ak-box{width:440px;background:#040F1D;border:1px solid rgba(200,168,75,.2);border-radius:16px;padding:30px;text-align:center}
+.ak-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;letter-spacing:3px;color:#C8A84B;margin-bottom:4px}
+.ak-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;letter-spacing:1.5px;margin-bottom:18px}
+.ak-info{background:rgba(30,136,229,.06);border:1px solid rgba(30,136,229,.15);border-radius:8px;padding:10px 14px;font-size:11px;color:#6A90B8;line-height:1.7;margin-bottom:16px;text-align:left}
+.ak-inp{width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(200,168,75,.2);border-radius:8px;padding:11px 14px;color:#C8D8E8;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;margin-bottom:10px;text-align:center;letter-spacing:.5px}
+.ak-inp:focus{border-color:rgba(200,168,75,.4)}
+.ak-btn{width:100%;padding:12px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:8px;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:#000;margin-bottom:8px}
+.ak-skip{width:100%;padding:8px;background:none;border:1px solid rgba(200,168,75,.15);border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3A5A7A}
+.ak-link{display:block;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A2A3A}
+
+/* ══ LAYOUT ════════════════════════════════════════════════ */
+#app{height:100vh;display:flex;flex-direction:column;display:none}
+header{height:50px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;gap:12px;background:rgba(1,8,20,.97);border-bottom:1px solid rgba(200,168,75,.1);position:relative;z-index:500}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,168,75,.2) 30%,rgba(200,168,75,.2) 70%,transparent)}
+.body{flex:1;display:grid;grid-template-columns:250px 1fr 252px;overflow:hidden}
 aside{display:flex;flex-direction:column;overflow:hidden}
-.left{background:rgba(1,8,20,.95);border-right:1px solid rgba(200,168,75,.08)}
-.right{background:rgba(1,8,20,.95);border-left:1px solid rgba(200,168,75,.08);overflow-y:auto}
+.left{background:rgba(1,8,20,.96);border-right:1px solid rgba(200,168,75,.07)}
+.right{background:rgba(1,8,20,.96);border-left:1px solid rgba(200,168,75,.07);overflow-y:auto}
 .center{display:flex;flex-direction:column;position:relative}
-#map{flex:1;min-height:0}
 
-/* ── Header elements ── */
-.hdr-logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.hdr-badge{width:34px;height:34px;border-radius:7px;background:linear-gradient(135deg,rgba(200,168,75,.15),rgba(10,79,212,.1));border:1px solid rgba(200,168,75,.2);display:flex;align-items:center;justify-content:center;font-size:18px}
-.hdr-title{font-family:'Orbitron',monospace;font-weight:900;font-size:13px;letter-spacing:4px;background:linear-gradient(90deg,#C8A84B,#E2C46A);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hdr-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;letter-spacing:1.5px;margin-top:1px}
-.hdr-div{width:1px;height:30px;background:rgba(200,168,75,.1);flex-shrink:0}
-.stat-item{text-align:center;flex-shrink:0}
-.stat-v{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;line-height:1}
-.stat-l{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:.5px;margin-top:2px}
-.hdr-phone{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,23,68,.06);border:1px solid rgba(255,23,68,.18)}
-.hdr-phone .ph-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:#FF1744;letter-spacing:.5px}
-.hdr-phone .ph-num{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#FF1744;letter-spacing:1px}
-.hdr-clock{text-align:right;flex-shrink:0}
-.clock-time{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#00E5FF;letter-spacing:2px}
-.clock-date{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;letter-spacing:.5px}
-.live-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.18);flex-shrink:0}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#00E676;box-shadow:0 0 6px #00E676;animation:pulse-dot 1.4s infinite}
-.live-txt{font-family:'Share Tech Mono',monospace;font-size:8px;color:#00E676;letter-spacing:1px}
+/* ══ HEADER ELEMENTS ═══════════════════════════════════════ */
+.h-logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.h-badge{width:32px;height:32px;border-radius:7px;background:linear-gradient(135deg,rgba(200,168,75,.15),rgba(10,79,212,.1));border:1px solid rgba(200,168,75,.2);display:flex;align-items:center;justify-content:center;font-size:17px}
+.h-santi{font-family:'Orbitron',monospace;font-weight:900;font-size:12px;letter-spacing:4px;background:linear-gradient(90deg,#C8A84B,#E2C46A);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.h-nexus{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:#1E88E5;margin-top:1px}
+.h-sub{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1A3A5A;letter-spacing:1px;margin-top:1px}
+.h-div{width:1px;height:28px;background:rgba(200,168,75,.1);flex-shrink:0}
+.h-stat{text-align:center;flex-shrink:0}
+.h-sv{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;line-height:1}
+.h-sl{font-family:'Share Tech Mono',monospace;font-size:6px;color:#2A4A6A;letter-spacing:.5px;margin-top:1px}
+.h-phone{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(255,23,68,.05);border:1px solid rgba(255,23,68,.16);cursor:pointer;transition:all .2s;flex-shrink:0}
+.h-phone:hover{background:rgba(255,23,68,.1)}
+.h-ph-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#FF6D6D;letter-spacing:.5px}
+.h-ph-num{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#FF1744;letter-spacing:1px}
+.h-user{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(200,168,75,.06);border:1px solid rgba(200,168,75,.15);flex-shrink:0}
+.h-user-dep{font-family:'Share Tech Mono',monospace;font-size:7px;color:#C8A84B;letter-spacing:.5px}
+.h-user-name{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#C8A84B;letter-spacing:1px}
+.h-clock{text-align:right;flex-shrink:0}
+.h-time{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#00E5FF;letter-spacing:2px}
+.h-date{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:.5px}
+.live-badge{display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.16);flex-shrink:0}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#00E676;box-shadow:0 0 6px #00E676;animation:pulse-dot 1.4s infinite}
+.live-txt{font-family:'Share Tech Mono',monospace;font-size:7px;color:#00E676;letter-spacing:1px}
+.gemini-badge{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(30,136,229,.08);border:1px solid rgba(30,136,229,.2);flex-shrink:0;display:none}
+.gb-dot{width:4px;height:4px;border-radius:50%;background:#1E88E5;animation:pulse-dot .8s infinite;flex-shrink:0}
+.gb-txt{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1E88E5;letter-spacing:.5px}
 
-/* ── Left Panel ── */
-.section-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:2px;text-transform:uppercase}
-.agents-section{padding:10px 12px;border-bottom:1px solid rgba(200,168,75,.08);flex-shrink:0}
-.agent-card{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .22s;margin-bottom:5px;position:relative}
-.agent-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.agent-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;animation:breathe 3.5s ease-in-out infinite}
-.agent-name{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.5px}
-.agent-role{font-size:9px;color:#2A4A6A;font-family:'Share Tech Mono',monospace;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.agent-dot{width:5px;height:5px;border-radius:50%;background:#00E676;box-shadow:0 0 5px #00E676;flex-shrink:0}
+/* ══ LEFT PANEL ════════════════════════════════════════════ */
+.sec-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1A3A5A;letter-spacing:2px;text-transform:uppercase}
+.agents-sec{padding:9px 11px 8px;border-bottom:1px solid rgba(200,168,75,.07);flex-shrink:0}
+.agent-card{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.05);cursor:pointer;transition:all .2s;margin-bottom:4px;position:relative;overflow:hidden}
+.agent-card:hover{transform:translateX(2px);box-shadow:0 3px 18px rgba(0,0,0,.4)}
+.agent-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;border-radius:1px}
+.ag-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;animation:breathe 4s ease-in-out infinite}
+.ag-name{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.5px}
+.ag-role{font-size:9px;color:#2A4A6A;font-family:'Share Tech Mono',monospace;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-dot{width:5px;height:5px;border-radius:50%;background:#00E676;box-shadow:0 0 5px #00E676;flex-shrink:0}
 
-/* ── Speech Panel ── */
-.speech-panel{margin:8px 12px;padding:9px 11px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.1);border-radius:9px;flex-shrink:0}
-.speech-agent{display:flex;align-items:center;gap:6px;margin-bottom:5px}
-.speech-dot{width:5px;height:5px;border-radius:50%}
-.speech-name{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px}
-.speech-text{font-size:11px;line-height:1.6;color:#8AAAC8}
+.speech-panel{margin:7px 11px 0;padding:9px 10px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.1);border-radius:9px;flex-shrink:0}
+.sp-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.sp-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;animation:pulse-dot 1.2s infinite}
+.sp-name{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;font-weight:700}
+.sp-gem{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:7px;color:#1E88E5;letter-spacing:.3px;display:none}
+.sp-text{font-size:11px;line-height:1.6;color:#8AAAC8;min-height:20px}
 
-/* ── Folio List ── */
-.folio-section{flex:1;overflow:hidden;display:flex;flex-direction:column;border-top:1px solid rgba(200,168,75,.08)}
-.folio-header{padding:8px 12px 5px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.osint-sec{border-top:1px solid rgba(200,168,75,.07);flex-shrink:0;max-height:140px;display:flex;flex-direction:column}
+.osint-header{padding:6px 11px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.osint-list{flex:1;overflow-y:auto;padding:0 11px 8px}
+.osint-item{padding:5px 8px;border-radius:7px;border-left:2px solid;margin-bottom:4px;background:rgba(0,0,0,.3);cursor:pointer;transition:all .18s;animation:slide-in .3s ease}
+.osint-item:hover{transform:translateX(2px)}
+.oi-source{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.oi-text{font-size:10px;line-height:1.4;color:#8AAAC8}
+.oi-risk{font-family:'Share Tech Mono',monospace;font-size:7px;padding:1px 5px;border-radius:999px;margin-left:auto}
+
+.folio-sec{flex:1;overflow:hidden;display:flex;flex-direction:column;border-top:1px solid rgba(200,168,75,.07)}
+.folio-hdr{padding:6px 11px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .folio-count{font-family:'Orbitron',monospace;font-size:10px;color:#C8A84B;font-weight:700}
-.folio-list{flex:1;overflow-y:auto;padding:0 12px 10px}
-.folio-item{padding:7px 9px;border-radius:8px;border:1px solid rgba(200,168,75,.1);background:rgba(4,22,40,.5);margin-bottom:5px;cursor:pointer;transition:all .18s;animation:slide-in .3s ease}
-.folio-item:hover{border-color:rgba(200,168,75,.2);transform:translateX(2px)}
-.folio-tag{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
-.folio-tipo{font-size:10px;font-weight:600;color:#C8D8E8;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.folio-meta{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;display:flex;gap:8px}
+.folio-list-el{flex:1;overflow-y:auto;padding:0 11px 8px}
+.folio-item{padding:7px 9px;border-radius:8px;border:1px solid rgba(200,168,75,.1);background:rgba(4,22,40,.5);margin-bottom:4px;cursor:pointer;transition:all .18s;animation:slide-in .3s ease}
+.folio-item:hover{border-color:rgba(200,168,75,.22);transform:translateX(2px)}
+.fi-tag{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.fi-tipo{font-size:10px;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-meta{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;display:flex;gap:6px;flex-wrap:wrap}
+.fi-status{padding:1px 6px;border-radius:999px;font-family:'Share Tech Mono',monospace;font-size:7px;margin-left:auto;flex-shrink:0}
 
-/* ── Bottom Tabs ── */
-.bottom-panel{height:230px;flex-shrink:0;background:rgba(1,8,20,.97);border-top:1px solid rgba(200,168,75,.1)}
-.tab-bar{height:34px;display:flex;align-items:center;border-bottom:1px solid rgba(200,168,75,.08);padding-left:4px}
-.tab-btn{padding:0 14px;height:34px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;color:#3A5A7A;transition:all .2s;white-space:nowrap}
+/* ══ MAP ═══════════════════════════════════════════════════ */
+#mapWrap{position:relative;flex:1;min-height:0}
+#map{width:100%;height:100%}
+.map-hud{position:absolute;top:9px;left:9px;display:flex;gap:6px;z-index:400;pointer-events:none;flex-wrap:wrap;max-width:280px}
+.hud-tag{padding:3px 9px;border-radius:999px;background:rgba(1,8,20,.9);border:1px solid rgba(200,168,75,.1);font-family:'Share Tech Mono',monospace;font-size:7px;color:#6A90B8;backdrop-filter:blur(6px);letter-spacing:.5px}
+.map-ctrl{position:absolute;top:9px;right:9px;z-index:400;display:flex;flex-direction:column;gap:5px}
+.map-ctrl-btn{width:32px;height:32px;background:rgba(1,8,20,.9);border:1px solid rgba(200,168,75,.15);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:#C8A84B;transition:all .2s;backdrop-filter:blur(6px)}
+.map-ctrl-btn:hover{background:rgba(200,168,75,.1)}
+.map-coords{position:absolute;bottom:6px;right:6px;z-index:400;font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;background:rgba(1,8,20,.85);padding:3px 8px;border-radius:5px;border:1px solid rgba(200,168,75,.07);pointer-events:none}
+
+/* ══ BOTTOM TABS ═══════════════════════════════════════════ */
+.bottom-panel{height:224px;flex-shrink:0;background:rgba(1,8,20,.97);border-top:1px solid rgba(200,168,75,.1)}
+.tab-bar{height:32px;display:flex;align-items:center;border-bottom:1px solid rgba(200,168,75,.07);padding-left:2px;overflow-x:auto;gap:0}
+.tab-btn{padding:0 12px;height:32px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:.8px;color:#2A4A6A;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .tab-btn.active{color:#C8A84B;border-bottom-color:#C8A84B}
 .tab-btn:hover:not(.active){color:#6A90B8}
-.tab-content{height:196px;overflow:hidden}
+.tab-content{height:192px;overflow:hidden}
 .tab-pane{display:none;height:100%}
 .tab-pane.active{display:flex}
 
-/* ── Report Form ── */
-.report-pane{display:grid;grid-template-columns:1fr 1fr 1fr;height:100%}
-.report-col{padding:8px 12px;overflow-y:auto}
-.report-col:not(:last-child){border-right:1px solid rgba(200,168,75,.08)}
-.r-input{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(200,168,75,.1);border-radius:6px;padding:7px 10px;color:#C8D8E8;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;transition:border-color .2s;margin-bottom:5px}
-.r-input:focus{border-color:rgba(200,168,75,.22)}
-.r-input option{background:#010D1A}
-.r-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px}
-.r-textarea{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(200,168,75,.1);border-radius:6px;padding:7px 10px;color:#C8D8E8;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;resize:none;margin-bottom:5px}
-.r-textarea:focus{border-color:rgba(200,168,75,.22)}
-.r-btn{width:100%;padding:8px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:6px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;color:#000;transition:all .2s}
-.r-btn:disabled{background:rgba(200,168,75,.06);color:#3A5A7A;cursor:not-allowed}
+/* ══ REPORT TAB ════════════════════════════════════════════ */
+.report-pane{display:grid;grid-template-columns:1.2fr 1fr 0.9fr;height:100%}
+.r-col{padding:7px 11px;overflow-y:auto}
+.r-col+.r-col{border-left:1px solid rgba(200,168,75,.07)}
+.r-row{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px}
+.r-inp{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(200,168,75,.1);border-radius:6px;padding:6px 9px;color:#C8D8E8;font-size:12px;outline:none;transition:border-color .2s}
+.r-inp:focus{border-color:rgba(200,168,75,.25)}
+.r-inp option{background:#010D1A}
+.r-ta{width:100%;background:rgba(0,0,0,.45);border:1px solid rgba(200,168,75,.1);border-radius:6px;padding:6px 9px;color:#C8D8E8;font-size:12px;outline:none;resize:none;margin-bottom:4px}
+.r-ta:focus{border-color:rgba(200,168,75,.25)}
+.r-field{margin-bottom:4px}
+.r-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:.8px;margin-bottom:2px}
+.r-actions{display:flex;gap:5px;margin-top:5px}
+.r-btn-main{flex:1;padding:8px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:6px;cursor:pointer;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:1px;color:#000;transition:all .2s}
+.r-btn-main:disabled{background:rgba(200,168,75,.06);color:#3A5A7A;cursor:not-allowed}
+.r-btn-mic{width:34px;padding:8px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);border-radius:6px;cursor:pointer;font-size:14px;transition:all .2s;flex-shrink:0}
+.r-btn-mic.listening{background:rgba(255,23,68,.12);border-color:rgba(255,23,68,.3);animation:pulse-dot .6s infinite}
 .protocol-step{display:flex;gap:7px;padding:5px 8px;background:rgba(0,0,0,.3);border:1px solid rgba(200,168,75,.1);border-radius:6px;margin-bottom:4px}
 .ps-num{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#C8A84B;flex-shrink:0}
 .ps-txt{font-size:10px;font-weight:600;line-height:1.4}
-.folio-guide{font-family:'Share Tech Mono',monospace;font-size:9px;line-height:1.9}
-.unit-guide{font-family:'Share Tech Mono',monospace;font-size:9px;line-height:1.9}
+.folio-guide-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(200,168,75,.06)}
+.fg-code{font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700}
+.fg-dep{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A}
 
-/* ── Analysis Pane ── */
-.analysis-pane{padding:10px 14px;overflow-y:auto;flex-direction:column}
-.an-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(200,168,75,.1);flex-wrap:wrap}
+/* ══ ANALYSIS TAB ══════════════════════════════════════════ */
+.analysis-pane{padding:9px 13px;overflow-y:auto;flex-direction:column;width:100%}
+.an-empty{font-family:'Share Tech Mono',monospace;font-size:9px;color:#1A3A5A;text-align:center;margin-top:28px;line-height:2}
+.an-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid rgba(200,168,75,.1);flex-wrap:wrap}
 .an-folio{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#C8A84B;letter-spacing:.5px}
 .an-risk{padding:2px 8px;border-radius:999px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700}
-.an-body{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
-.an-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:1.5px;margin-bottom:5px}
+.an-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+.an-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#1A3A5A;letter-spacing:1.5px;margin-bottom:4px}
 .an-text{font-size:11px;color:#8AAAC8;line-height:1.65;margin-bottom:8px}
-.an-action{display:flex;gap:7px;margin-bottom:5px;padding:5px 8px;background:rgba(0,0,0,.35);border:1px solid rgba(200,168,75,.1);border-radius:6px}
+.an-action{display:flex;gap:7px;margin-bottom:4px;padding:5px 8px;background:rgba(0,0,0,.35);border:1px solid rgba(200,168,75,.1);border-radius:6px}
 .an-num{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#C8A84B;flex-shrink:0}
 .an-act{font-size:10px;font-weight:600;line-height:1.4}
-.an-empty{font-family:'Share Tech Mono',monospace;font-size:9px;color:#2A4A6A;text-align:center;margin-top:30px;line-height:1.8}
 
-/* ── Trace Pane ── */
+/* ══ TRACE TAB ═════════════════════════════════════════════ */
 .trace-pane{display:grid;grid-template-columns:1fr 1fr;height:100%}
-.trace-col{padding:8px 14px;overflow-y:auto}
-.trace-col:first-child{border-right:1px solid rgba(200,168,75,.08)}
-.trace-unit{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding:6px 9px;background:rgba(0,0,0,.35);border-radius:7px;border:1px solid rgba(200,168,75,.12)}
-.trace-id{font-family:'Orbitron',monospace;font-size:10px;font-weight:700}
-.trace-status{padding:2px 7px;border-radius:999px;font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:.5px;margin-left:auto}
-.trace-entry{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(200,168,75,.05)}
-.trace-time{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;flex-shrink:0;min-width:35px}
-.trace-bar{width:1px;background:rgba(200,168,75,.15);flex-shrink:0}
-.trace-ev{font-size:10px;color:#8AAAC8;line-height:1.4}
-.data-row{display:flex;justify-content:space-between;padding:4px 8px;background:rgba(0,0,0,.3);border-radius:5px;border:1px solid rgba(200,168,75,.08);margin-bottom:4px}
-.data-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A}
-.data-val{font-family:'Share Tech Mono',monospace;font-size:9px;color:#8AAAC8;font-weight:600}
+.trace-col{padding:7px 12px;overflow-y:auto}
+.trace-col+.trace-col{border-left:1px solid rgba(200,168,75,.07)}
+.trace-unit-card{display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,.35);border-radius:8px;border:1px solid rgba(200,168,75,.12);margin-bottom:8px}
+.tu-id{font-family:'Orbitron',monospace;font-size:11px;font-weight:700}
+.tu-label{font-size:10px;color:#6A90B8}
+.tu-status{padding:2px 7px;border-radius:999px;font-family:'Share Tech Mono',monospace;font-size:7px;margin-left:auto;flex-shrink:0}
+.trace-timeline{position:relative;padding-left:18px}
+.trace-timeline::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:1px;background:rgba(200,168,75,.1)}
+.timeline-event{position:relative;padding:4px 0 4px 8px;font-size:10px;color:#8AAAC8;line-height:1.4;border-bottom:1px solid rgba(200,168,75,.05)}
+.timeline-event::before{content:'';position:absolute;left:-13px;top:9px;width:7px;height:7px;border-radius:50%;background:#C8A84B;box-shadow:0 0 6px rgba(200,168,75,.5)}
+.te-time{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;margin-right:6px}
+.data-kv{display:flex;justify-content:space-between;padding:4px 8px;background:rgba(0,0,0,.3);border-radius:5px;border:1px solid rgba(200,168,75,.07);margin-bottom:3px}
+.dk-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A}
+.dk-val{font-family:'Share Tech Mono',monospace;font-size:8px;color:#8AAAC8;font-weight:600;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ── Log Pane ── */
-.log-pane{padding:8px 14px;overflow-y:auto;flex-direction:column}
-.log-entry{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(200,168,75,.05);animation:slide-in .2s ease}
-.log-time{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;flex-shrink:0;min-width:35px}
+/* ══ LOG TAB ═══════════════════════════════════════════════ */
+.log-pane{padding:7px 13px;overflow-y:auto;flex-direction:column;width:100%}
+.log-entry{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(200,168,75,.04);animation:slide-in .2s ease}
+.log-time{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;flex-shrink:0;min-width:35px}
 .log-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
 .log-msg{font-size:11px;color:#6A90B8;line-height:1.4}
 
-/* ── Right Panel ── */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid rgba(200,168,75,.08);flex-shrink:0}
-.stat-card{background:rgba(4,22,40,.5);border:1px solid rgba(200,168,75,.1);border-radius:9px;padding:9px 10px;text-align:center;position:relative;overflow:hidden}
-.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;opacity:.35}
-.sc-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;line-height:1}
-.sc-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;letter-spacing:.5px;margin-top:4px;line-height:1.2}
-.modules-section{padding:10px 12px;border-bottom:1px solid rgba(200,168,75,.08);flex-shrink:0}
-.mod-btn{width:100%;background:transparent;border:none;cursor:pointer;text-align:left;margin-bottom:6px}
-.mod-inner{padding:9px 11px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(4,22,40,.4);display:flex;align-items:center;gap:10px;transition:all .22s;position:relative;overflow:hidden}
-.mod-inner::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .4s}
-.mod-btn:hover .mod-inner{transform:translateY(-2px) scale(1.01);border-color:rgba(200,168,75,.14)}
-.mod-btn:hover .mod-inner::after{left:100%}
-.mod-ico{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.mod-name{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:.3px;margin-bottom:2px}
-.mod-desc{font-size:9px;color:#2A4A6A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mod-badge{font-family:'Share Tech Mono',monospace;font-size:7px;padding:1px 5px;border-radius:999px;flex-shrink:0}
-.sec-btn{width:100%;padding:11px 12px;border:1px solid rgba(255,23,68,.35);border-radius:10px;cursor:pointer;background:linear-gradient(135deg,rgba(255,23,68,.12),rgba(120,0,20,.08));font-family:'Orbitron',monospace;font-size:10px;font-weight:900;letter-spacing:1.5px;color:#FF6D6D;position:relative;overflow:hidden;animation:sec-pulse 2.5s ease-in-out infinite;margin-bottom:8px}
-.sec-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,23,68,.07),transparent);animation:scan-line 2.5s ease-in-out infinite}
-.scan-section{padding:10px 12px}
-.scan-row{display:flex;gap:5px;margin-bottom:6px}
-.scan-input{flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:6px 10px;color:#C8D8E8;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;outline:none}
-.scan-go{padding:6px 10px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.22);border-radius:6px;color:#00E5FF;font-family:'Orbitron',monospace;font-size:8px;font-weight:700;cursor:pointer;letter-spacing:.5px}
-.scan-result{padding:9px 10px;background:rgba(255,23,68,.05);border:1px solid rgba(255,23,68,.18);border-radius:8px;animation:fade-up .3s ease}
-.scan-plate{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:#FF1744;letter-spacing:3px;margin-bottom:4px}
-.scan-data{font-family:'Share Tech Mono',monospace;font-size:8px;color:#6A90B8;line-height:1.7}
-.unit-legend{margin-top:10px;border-top:1px solid rgba(200,168,75,.08);padding-top:8px}
-.ul-item{display:flex;align-items:center;gap:7px;margin-bottom:4px}
-.ul-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.ul-id{font-family:'Share Tech Mono',monospace;font-size:8px;color:#C8A84B;min-width:28px}
-.ul-label{font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;flex:1}
-.ul-status{font-family:'Share Tech Mono',monospace;font-size:7px;margin-left:auto}
+/* ══ RIGHT PANEL ═══════════════════════════════════════════ */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:9px 11px;border-bottom:1px solid rgba(200,168,75,.07);flex-shrink:0}
+.stat-card{background:rgba(4,22,40,.5);border:1px solid rgba(200,168,75,.1);border-radius:9px;padding:8px 9px;text-align:center;position:relative;overflow:hidden}
+.sc-val{font-family:'Orbitron',monospace;font-size:17px;font-weight:900;line-height:1}
+.sc-label{font-family:'Share Tech Mono',monospace;font-size:6px;color:#2A4A6A;letter-spacing:.4px;margin-top:3px;line-height:1.3}
+.units-sec{padding:8px 11px;border-bottom:1px solid rgba(200,168,75,.07);flex-shrink:0}
+.unit-row{display:flex;align-items:center;gap:6px;padding:4px 7px;border-radius:6px;border:1px solid rgba(200,168,75,.08);background:rgba(0,0,0,.3);margin-bottom:3px}
+.ur-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.ur-id{font-family:'Share Tech Mono',monospace;font-size:8px;color:#C8A84B;min-width:28px}
+.ur-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ur-sector{font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;text-align:right;min-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ur-status{font-family:'Share Tech Mono',monospace;font-size:6px;flex-shrink:0;margin-left:2px}
+.mods-sec{padding:8px 11px;border-bottom:1px solid rgba(200,168,75,.07);flex-shrink:0}
+.mod-btn{width:100%;background:transparent;border:none;cursor:pointer;text-align:left;margin-bottom:5px}
+.mod-inner{padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(4,22,40,.4);display:flex;align-items:center;gap:8px;transition:all .2s;position:relative;overflow:hidden}
+.mod-btn:hover .mod-inner{transform:translateY(-1px);border-color:rgba(200,168,75,.14)}
+.mod-ico{width:32px;height:32px;border-radius:7px;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.mod-name{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:.3px;margin-bottom:1px}
+.mod-desc{font-size:8px;color:#1A3A5A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mod-badge{font-family:'Share Tech Mono',monospace;font-size:6px;padding:1px 5px;border-radius:999px;flex-shrink:0}
+.alert-btn{width:100%;padding:10px 11px;border:1px solid rgba(255,23,68,.3);border-radius:9px;cursor:pointer;background:linear-gradient(135deg,rgba(255,23,68,.1),rgba(120,0,20,.06));font-family:'Orbitron',monospace;font-size:9px;font-weight:900;letter-spacing:1.5px;color:#FF6D6D;position:relative;overflow:hidden;animation:sec-pulse 2.5s ease-in-out infinite;margin-bottom:7px}
+.scan-sec{padding:7px 11px}
+.scan-row{display:flex;gap:4px;margin-bottom:5px}
+.scan-inp{flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.15);border-radius:6px;padding:6px 9px;color:#C8D8E8;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;outline:none}
+.scan-go{padding:6px 9px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);border-radius:6px;color:#00E5FF;font-family:'Orbitron',monospace;font-size:7px;font-weight:700;cursor:pointer}
+.scan-result{padding:8px 9px;background:rgba(255,23,68,.04);border:1px solid rgba(255,23,68,.16);border-radius:8px;animation:fade-up .3s ease}
+.scan-plate{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:#FF1744;letter-spacing:3px;margin-bottom:3px}
+.scan-data{font-family:'Share Tech Mono',monospace;font-size:7px;color:#6A90B8;line-height:1.8}
 
-/* ── HUD ── */
-.map-hud{position:absolute;top:10px;left:10px;display:flex;gap:7px;z-index:400;pointer-events:none}
-.hud-tag{padding:4px 10px;border-radius:999px;background:rgba(1,8,20,.88);border:1px solid rgba(200,168,75,.1);font-family:'Share Tech Mono',monospace;font-size:8px;color:#6A90B8;backdrop-filter:blur(8px);letter-spacing:.5px}
-.map-coords{position:absolute;bottom:8px;right:8px;z-index:400;font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;background:rgba(1,8,20,.85);padding:4px 9px;border-radius:5px;border:1px solid rgba(200,168,75,.08);pointer-events:none}
-
-/* ── Modals ── */
+/* ══ CHAT MODAL ════════════════════════════════════════════ */
 .modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
-.modal-box{width:460px;max-height:78vh;display:flex;flex-direction:column;background:#040F1D;border-radius:16px;overflow:hidden}
-.modal-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom-width:1px;border-bottom-style:solid;flex-shrink:0}
-.modal-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.modal-agent-name{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:1px}
-.modal-agent-role{font-size:10px;color:#3A5A7A;font-family:'Share Tech Mono',monospace;margin-top:2px}
-.modal-agent-lang{font-size:9px;font-family:'Share Tech Mono',monospace;margin-top:1px;opacity:.6}
-.modal-close{background:none;border:none;color:#3A5A7A;font-size:18px;cursor:pointer;padding:4px;margin-left:auto;flex-shrink:0}
-.modal-close:hover{color:#6A90B8}
-.chat-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.chat-box{width:480px;max-height:80vh;display:flex;flex-direction:column;background:#040F1D;border-radius:16px;overflow:hidden}
+.chat-hdr{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom-width:1px;border-bottom-style:solid;flex-shrink:0}
+.chat-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.chat-ag-name{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:1px}
+.chat-ag-role{font-size:9px;color:#3A5A7A;font-family:'Share Tech Mono',monospace;margin-top:1px}
+.chat-ag-lang{font-size:8px;font-family:'Share Tech Mono',monospace;margin-top:1px;opacity:.55}
+.chat-status{display:flex;align-items:center;gap:5px;margin-right:6px}
+.chat-status-dot{width:5px;height:5px;border-radius:50%;background:#00E676;box-shadow:0 0 6px #00E676}
+.chat-status-txt{font-family:'Share Tech Mono',monospace;font-size:7px;color:#00E676;letter-spacing:1px}
+.chat-close{background:none;border:none;color:#3A5A7A;font-size:18px;cursor:pointer;padding:4px}
+.chat-close:hover{color:#6A90B8}
+.chat-messages{flex:1;overflow-y:auto;padding:12px 13px;display:flex;flex-direction:column;gap:8px;min-height:180px}
 .chat-msg{display:flex;gap:8px}
-.chat-msg.user{justify-content:flex-end}
-.chat-bubble{max-width:76%;padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.6;color:#D0E8FF}
-.chat-bubble.agent{border-radius:12px 12px 12px 4px;background:rgba(10,30,50,.9)}
-.chat-bubble.user{border-radius:12px 12px 4px 12px;background:rgba(200,168,75,.12);border:1px solid rgba(200,168,75,.2)}
-.chat-input-row{padding:10px 14px;display:flex;gap:8px;flex-shrink:0;border-top-width:1px;border-top-style:solid}
-.chat-input{flex:1;background:rgba(0,0,0,.4);border-radius:8px;padding:8px 12px;color:#D0E8FF;font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;border-width:1px;border-style:solid}
-.chat-send{padding:8px 14px;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;border-width:1px;border-style:solid}
+.chat-msg.user-msg{justify-content:flex-end}
+.chat-bubble{max-width:78%;padding:9px 12px;border-radius:12px;font-size:12px;line-height:1.65;color:#D0E8FF}
+.chat-bubble.agent-b{border-radius:12px 12px 12px 4px;background:rgba(10,30,50,.9)}
+.chat-bubble.user-b{border-radius:12px 12px 4px 12px;background:rgba(200,168,75,.1);border:1px solid rgba(200,168,75,.2)}
+.chat-inp-row{padding:9px 13px;display:flex;gap:7px;flex-shrink:0;border-top-width:1px;border-top-style:solid}
+.chat-inp{flex:1;background:rgba(0,0,0,.4);border-radius:8px;padding:8px 12px;color:#D0E8FF;font-size:13px;outline:none;border-width:1px;border-style:solid}
+.chat-send{padding:8px 13px;border-radius:8px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;border-width:1px;border-style:solid}
 .chat-send:disabled{opacity:.4;cursor:not-allowed}
-.chat-mic{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;border-width:1px;border-style:solid;flex-shrink:0}
-.chat-mic.listening{animation:pulse-dot .6s infinite}
+.chat-mic-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .2s;border-width:1px;border-style:solid;flex-shrink:0}
+.chat-mic-btn.listening{background:rgba(255,23,68,.15)!important;border-color:rgba(255,23,68,.3)!important;animation:pulse-dot .5s infinite}
 
-/* ── Module Modal ── */
-.mod-modal-box{width:460px;max-height:80vh;overflow-y:auto;background:#040F1D;border-radius:16px;padding:22px}
-.mod-modal-hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px}
-.mod-modal-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;letter-spacing:.5px}
-.mod-modal-sub{font-family:'Share Tech Mono',monospace;font-size:8px;color:#3A5A7A;margin-top:3px;letter-spacing:1px}
-.mod-step{display:flex;gap:10px;margin-bottom:8px;padding:10px 11px;background:rgba(0,0,0,.35);border-radius:10px;border-width:1px;border-style:solid}
-.ms-num{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;flex-shrink:0}
-.ms-title{font-weight:700;font-size:13px;margin-bottom:2px}
-.ms-desc{font-size:11px;color:#3A5A7A;line-height:1.5}
-.mod-alert{background:rgba(255,23,68,.05);border:1px solid rgba(255,23,68,.18);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:11px;color:#6A90B8;line-height:1.6}
-.mod-voice-btn{width:100%;margin-top:12px;padding:10px;background:rgba(200,168,75,.07);border-radius:8px;color:#C8A84B;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;border-width:1px;border-style:solid;border-color:rgba(200,168,75,.3)}
+/* ══ MODULE MODAL ══════════════════════════════════════════ */
+.mod-modal-box{width:460px;max-height:82vh;overflow-y:auto;background:#040F1D;border-radius:16px;padding:22px}
+.mm-hdr{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-bottom:13px;border-bottom-width:1px;border-bottom-style:solid}
+.mm-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;letter-spacing:.5px}
+.mm-sub{font-family:'Share Tech Mono',monospace;font-size:7px;color:#3A5A7A;margin-top:3px;letter-spacing:1px}
+.mm-step{display:flex;gap:9px;margin-bottom:7px;padding:9px 10px;background:rgba(0,0,0,.35);border-radius:9px;border-width:1px;border-style:solid}
+.ms-n{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;flex-shrink:0}
+.ms-t{font-weight:700;font-size:12px;margin-bottom:2px}
+.ms-d{font-size:10px;color:#3A5A7A;line-height:1.5}
+.mm-alert{background:rgba(255,23,68,.04);border:1px solid rgba(255,23,68,.16);border-radius:9px;padding:9px 11px;margin-top:10px;font-size:10px;color:#6A90B8;line-height:1.6}
+.mm-voice-btn{width:100%;margin-top:11px;padding:9px;background:rgba(200,168,75,.07);border-radius:8px;color:#C8A84B;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;border:1px solid rgba(200,168,75,.25)}
+.mm-chat-btn{width:100%;margin-top:6px;padding:9px;border-radius:8px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;border:1px solid;transition:all .2s}
 
-/* ── API Key Modal ── */
-.apikey-modal{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.9);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center}
-.apikey-box{width:440px;background:#040F1D;border:1px solid rgba(200,168,75,.2);border-radius:16px;padding:28px;text-align:center}
-.apikey-title{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#C8A84B,#E2C46A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
-.apikey-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:#3A5A7A;letter-spacing:1.5px;margin-bottom:18px}
-.apikey-desc{font-size:12px;color:#6A90B8;line-height:1.7;margin-bottom:16px}
-.apikey-input{width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(200,168,75,.2);border-radius:8px;padding:10px 14px;color:#C8D8E8;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;margin-bottom:10px;text-align:center;letter-spacing:.5px}
-.apikey-input:focus{border-color:rgba(200,168,75,.4)}
-.apikey-btn{width:100%;padding:12px;background:linear-gradient(135deg,#C8A84B,#8A6A20);border:none;border-radius:8px;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:#000;margin-bottom:8px}
-.apikey-skip{width:100%;padding:8px;background:none;border:1px solid rgba(200,168,75,.15);border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3A5A7A;letter-spacing:.5px}
-.apikey-link{display:block;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A;text-decoration:none}
-.apikey-link:hover{color:#6A90B8}
+/* ══ FULLSCREEN MAP ════════════════════════════════════════ */
+#mapFullscreen{position:fixed;inset:0;z-index:5000;display:none;flex-direction:column;background:#000509}
+#mapFullscreen.open{display:flex}
+.mf-hdr{height:44px;background:rgba(1,8,20,.97);border-bottom:1px solid rgba(200,168,75,.1);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.mf-title{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:3px;color:#C8A84B}
+.mf-close{margin-left:auto;padding:6px 14px;background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.2);border-radius:6px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;color:#C8A84B}
+#mapFull{flex:1}
 
-/* ── Animations ── */
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-@keyframes slide-in{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
-@keyframes fade-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@keyframes scan-line{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-@keyframes sec-pulse{0%,100%{box-shadow:0 0 12px rgba(255,23,68,.2)}50%{box-shadow:0 0 28px rgba(255,23,68,.4)}}
-@keyframes typing-dots{0%,100%{opacity:1}50%{opacity:.3}}
+/* ══ ANIMATIONS ════════════════════════════════════════════ */
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes slide-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+@keyframes fade-up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes sec-pulse{0%,100%{box-shadow:0 0 10px rgba(255,23,68,.15)}50%{box-shadow:0 0 24px rgba(255,23,68,.35)}}
+@keyframes shield-pulse{0%,100%{filter:drop-shadow(0 0 12px rgba(200,168,75,.3))}50%{filter:drop-shadow(0 0 30px rgba(200,168,75,.6))}}
+@keyframes gold-sweep{0%{background-position:0%}100%{background-position:200%}}
+@keyframes typing-dot{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes scan-sweep{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
+.leaflet-container{background:#010810!important}
 </style>
 </head>
 <body>
-<!-- ══ API KEY MODAL ══════════════════════════════════════ -->
-<div class="apikey-modal" id="apikeyModal">
-  <div class="apikey-box">
-    <div style="font-size:40px;margin-bottom:12px">🛡️</div>
-    <div class="apikey-title">SANTI · C.M.O.</div>
-    <div class="apikey-sub">SISTEMA DE ANÁLISIS NEURONAL TÁCTICO INTELIGENTE</div>
-    <div class="apikey-desc">
-      Ingresa tu API key de <strong style="color:#C8A84B">Google Gemini</strong> para activar los 5 agentes IA con inteligencia real.<br/>
-      <span style="color:#3A5A7A">Sin key: los agentes responden con análisis predefinido de Temixco.</span>
+
+<!-- ══ WELCOME ══════════════════════════════════════════════ -->
+<div id="welcomeScreen">
+  <div class="welcome-bg"></div>
+  <div class="welcome-grid"></div>
+  <div class="welcome-inner">
+    <span class="welcome-shield">🛡️</span>
+    <div class="welcome-santi">SANTI</div>
+    <div class="welcome-nexus">N E X U S</div>
+    <div class="welcome-divider"></div>
+    <div class="welcome-sub">SISTEMA DE ANÁLISIS NEURONAL TÁCTICO INTELIGENTE</div>
+    <div class="welcome-loc">SECRETARÍA DE SEGURIDAD PÚBLICA · TEMIXCO, MORELOS · 2026</div>
+    <div class="welcome-voice-box">
+      <div class="welcome-voice-dot"></div>
+      <div class="welcome-voice-text" id="welcomeVoiceText">Inicializando sistema SANTI NEXUS...</div>
     </div>
-    <input class="apikey-input" id="apikeyInput" type="password" placeholder="AIzaSy..."/>
-    <button class="apikey-btn" onclick="activateWithKey()">⚡ ACTIVAR SISTEMA SANTI</button>
-    <button class="apikey-skip" onclick="activateDemo()">Continuar en modo demo (sin IA real)</button>
-    <a class="apikey-link" href="https://aistudio.google.com/app/apikey" target="_blank">→ Obtener API key gratis en Google AI Studio</a>
+    <button class="welcome-btn" onclick="goToLogin()">ACCEDER AL SISTEMA</button>
+    <div class="welcome-version">SANTI NEXUS v4.0 · GOOGLE I/O 2026 · TEMIXCO, MOR.</div>
   </div>
 </div>
 
-<!-- ══ AGENT CHAT MODAL ════════════════════════════════════ -->
-<div class="modal-overlay" id="chatModal">
-  <div class="modal-box" id="chatBox">
-    <div class="modal-header" id="chatHeader">
-      <div class="modal-avatar" id="chatAvatar"></div>
-      <div>
-        <div class="modal-agent-name" id="chatAgentName"></div>
-        <div class="modal-agent-role" id="chatAgentRole"></div>
-        <div class="modal-agent-lang" id="chatAgentLang"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-right:8px">
-        <div style="width:6px;height:6px;border-radius:50%;background:#00E676;box-shadow:0 0 6px #00E676"></div>
-        <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00E676">EN LÍNEA</span>
-      </div>
-      <button class="modal-close" onclick="closeChatModal()">✕</button>
+<!-- ══ LOGIN ════════════════════════════════════════════════ -->
+<div id="loginScreen" style="display:none;position:fixed;inset:0;z-index:8000;align-items:center;justify-content:center;background:rgba(0,5,9,.97)">
+  <div class="login-box">
+    <div class="login-shield">👮</div>
+    <div class="login-title">SANTI NEXUS</div>
+    <div class="login-sub">ACCESO SEGURO POR DEPENDENCIA</div>
+    <select class="l-inp" id="loginDep">
+      <option value="">Selecciona tu dependencia...</option>
+      <option value="mun">🏛 Municipal · Temixco</option>
+      <option value="sspc">⭐ SSPC · Morelos</option>
+      <option value="gn">🇲🇽 Guardia Nacional</option>
+      <option value="marina">⚓ Secretaría de Marina</option>
+      <option value="fge">⚖ FGE · Morelos</option>
+      <option value="fgr">🔒 FGR · Delegación</option>
+      <option value="mando">🎖 Mando Superior / Secretario</option>
+    </select>
+    <input class="l-inp" type="text" id="loginUser" placeholder="Usuario / CUIP / Número de empleado"/>
+    <input class="l-inp" type="password" id="loginPass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">INGRESAR AL SISTEMA</button>
+    <div class="login-note">DEMO MODE · Cualquier credencial es válida · Datos reales de Temixco 2025</div>
+  </div>
+</div>
+
+<!-- ══ API KEY ═══════════════════════════════════════════════ -->
+<div id="apikeyModal" style="display:none;position:fixed;inset:0;z-index:7000;align-items:center;justify-content:center;background:rgba(0,0,0,.88);backdrop-filter:blur(12px)">
+  <div class="ak-box">
+    <div style="font-size:36px;margin-bottom:12px">⚡</div>
+    <div class="ak-title">GEMINI IA REAL</div>
+    <div class="ak-sub">ACTIVAR INTELIGENCIA NEURONAL COMPLETA</div>
+    <div class="ak-info">
+      <strong style="color:#C8A84B">Si guardaste tu llave en Replit Secrets:</strong> la app principal ya la usa automáticamente. Este archivo HTML corre sin servidor — necesita la llave aquí para IA real.<br/>
+      <span style="color:#2A4A6A">Sin llave: los agentes responden con análisis predefinido de Temixco.</span>
     </div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-row" id="chatInputRow">
-      <button class="chat-mic" id="micBtn" onclick="toggleVoiceInput()" title="Hablar con el agente">🎤</button>
-      <input class="chat-input" id="chatInput" placeholder="Escribe o habla con el agente..." onkeydown="if(event.key==='Enter')sendChat()"/>
+    <input class="ak-inp" id="akInput" type="password" placeholder="AIzaSy..."/>
+    <button class="ak-btn" onclick="activateGemini()">⚡ ACTIVAR GEMINI 2.5 FLASH</button>
+    <button class="ak-skip" onclick="activateDemo()">Continuar en modo demo — sin IA real</button>
+    <a class="ak-link" href="https://aistudio.google.com/app/apikey" target="_blank">→ aistudio.google.com · API key gratis</a>
+  </div>
+</div>
+
+<!-- ══ AGENT CHAT MODAL ══════════════════════════════════════ -->
+<div class="modal-overlay" id="chatModal">
+  <div class="chat-box" id="chatBox">
+    <div class="chat-hdr" id="chatHdr">
+      <div class="chat-av" id="chatAv"></div>
+      <div style="flex:1;min-width:0">
+        <div class="chat-ag-name" id="chatName"></div>
+        <div class="chat-ag-role" id="chatRole"></div>
+        <div class="chat-ag-lang" id="chatLang"></div>
+      </div>
+      <div class="chat-status"><div class="chat-status-dot"></div><span class="chat-status-txt">EN LÍNEA</span></div>
+      <button class="chat-close" onclick="closeChatModal()">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMsgs"></div>
+    <div class="chat-inp-row" id="chatInpRow">
+      <button class="chat-mic-btn" id="chatMicBtn" onclick="toggleVoice()" title="Hablar con el agente (voz)">🎤</button>
+      <input class="chat-inp" id="chatInp" placeholder="Escribe o usa el micrófono para hablar..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"/>
       <button class="chat-send" id="chatSendBtn" onclick="sendChat()">ENVIAR</button>
     </div>
   </div>
 </div>
 
-<!-- ══ MODULE MODAL ════════════════════════════════════════ -->
+<!-- ══ MODULE MODAL ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modModal">
   <div class="mod-modal-box" id="modBox"></div>
 </div>
 
-<!-- ══ APP ════════════════════════════════════════════════ -->
+<!-- ══ FULLSCREEN MAP ════════════════════════════════════════ -->
+<div id="mapFullscreen">
+  <div class="mf-hdr">
+    <span style="font-size:18px">🗺</span>
+    <span class="mf-title">MAPA TÁCTICO · TEMIXCO · TIEMPO REAL</span>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#2A4A6A">15 UNIDADES · HEATMAP ACTIVO · ZONA RIESGO</span>
+    <button class="mf-close" onclick="closeFullscreenMap()">✕ CERRAR</button>
+  </div>
+  <div id="mapFull"></div>
+</div>
+
+<!-- ══ MAIN APP ══════════════════════════════════════════════ -->
 <div id="app">
   <!-- HEADER -->
   <header>
-    <div class="hdr-logo">
-      <div class="hdr-badge">👮</div>
+    <div class="h-logo">
+      <div class="h-badge">👮</div>
       <div>
-        <div class="hdr-title">SANTI · C.M.O.</div>
-        <div class="hdr-sub">SECRETARÍA SEG. PÚBLICA · TEMIXCO, MORELOS · 2026</div>
+        <div style="display:flex;align-items:baseline;gap:7px"><div class="h-santi">SANTI</div><div class="h-nexus">NEXUS</div></div>
+        <div class="h-sub">SECRETARÍA SEG. PÚB. · TEMIXCO, MORELOS · 2026</div>
       </div>
     </div>
-    <div class="hdr-div"></div>
-    <div style="display:flex;gap:14px;align-items:center">
-      <div class="stat-item"><div class="stat-v" id="hdrUnits" style="color:#00E676">12</div><div class="stat-l">UNIDADES</div></div>
-      <div class="stat-item"><div class="stat-v" id="hdrReports" style="color:#00E5FF">47</div><div class="stat-l">REPORTES</div></div>
-      <div class="stat-item"><div class="stat-v" id="hdrAlerts" style="color:#FF1744">3</div><div class="stat-l">ALERTAS</div></div>
-      <div class="stat-item"><div class="stat-v" style="color:#C8A84B">8m</div><div class="stat-l">T.RESPUESTA</div></div>
+    <div class="h-div"></div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="h-stat"><div class="h-sv" id="hUnits" style="color:#00E676">15</div><div class="h-sl">UNIDADES</div></div>
+      <div class="h-stat"><div class="h-sv" id="hReports" style="color:#00E5FF">47</div><div class="h-sl">REPORTES</div></div>
+      <div class="h-stat"><div class="h-sv" id="hAlerts" style="color:#FF1744">3</div><div class="h-sl">ALERTAS</div></div>
+      <div class="h-stat"><div class="h-sv" style="color:#C8A84B">8m</div><div class="h-sl">T.RESPUESTA</div></div>
     </div>
     <div style="flex:1"></div>
-    <div class="hdr-phone"><span>📞</span><div><div class="ph-label">SECRETARIO SEG. PÚB.</div><div class="ph-num">777-329-0000</div></div></div>
-    <div class="hdr-div"></div>
-    <div class="hdr-clock"><div class="clock-time" id="clock">00:00:00</div><div class="clock-date" id="clockDate"></div></div>
+    <div class="gemini-badge" id="geminiBadge"><div class="gb-dot"></div><span class="gb-txt">GEMINI ACTIVO</span></div>
+    <div class="h-phone" onclick="callSecretary('5640967363')"><span>📞</span><div><div class="h-ph-label">SECRETARIO SEG. PÚB.</div><div class="h-ph-num">564-096-7363</div></div></div>
+    <div class="h-div"></div>
+    <div class="h-user"><span style="font-size:14px" id="hUserEmoji">👮</span><div><div class="h-user-dep" id="hUserDep">MUNICIPAL</div><div class="h-user-name" id="hUserName">OPERADOR</div></div></div>
+    <div class="h-div"></div>
+    <div class="h-clock"><div class="h-time" id="clock">00:00:00</div><div class="h-date" id="clockDate"></div></div>
     <div class="live-badge"><div class="live-dot"></div><span class="live-txt">EN VIVO</span></div>
   </header>
 
@@ -307,43 +437,54 @@ aside{display:flex;flex-direction:column;overflow:hidden}
   <div class="body">
     <!-- LEFT -->
     <aside class="left">
-      <div class="agents-section">
-        <div class="section-label" style="margin-bottom:8px">Agentes IA · Haz clic para consultar</div>
+      <div class="agents-sec">
+        <div class="sec-label" style="margin-bottom:7px">Agentes IA · Clic o voz para consultar</div>
         <div id="agentsList"></div>
       </div>
-      <div class="speech-panel" id="speechPanel">
-        <div class="speech-agent">
-          <div class="speech-dot" id="speechDot" style="background:#C8A84B;box-shadow:0 0 5px #C8A84B"></div>
-          <span class="speech-name" id="speechName" style="color:#C8A84B">SANTI</span>
-          <span id="geminiIndicator" style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:7px;color:#1E88E5;letter-spacing:.5px;display:none">⚡ GEMINI</span>
+      <div class="speech-panel">
+        <div class="sp-row">
+          <div class="sp-dot" id="spDot" style="background:#C8A84B;box-shadow:0 0 5px #C8A84B"></div>
+          <span class="sp-name" id="spName" style="color:#C8A84B">SANTI</span>
+          <span class="sp-gem" id="spGem">⚡ GEMINI</span>
         </div>
-        <div class="speech-text" id="speechText">Sistema SANTI inicializado. Centro de Mando Operativo de Temixco activo. Todas las unidades en línea.</div>
+        <div class="sp-text" id="spText">Sistema SANTI NEXUS inicializado. Centro de Mando Operativo de Temixco activo. 15 unidades en línea.</div>
       </div>
-      <div class="folio-section">
-        <div class="folio-header">
-          <span class="section-label">Registro de Folios</span>
+      <div class="osint-sec">
+        <div class="osint-header">
+          <span class="sec-label">OSINT · Fuentes Abiertas</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#00E5FF;letter-spacing:.5px">EN VIVO</span>
+        </div>
+        <div class="osint-list" id="osintList"></div>
+      </div>
+      <div class="folio-sec">
+        <div class="folio-hdr">
+          <span class="sec-label">Registro de Folios</span>
           <span class="folio-count" id="folioCount">0</span>
         </div>
-        <div class="folio-list" id="folioList">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2A4A6A;text-align:center;margin-top:16px;line-height:1.8">Sin folios registrados<br/>Envía un reporte para comenzar</div>
+        <div class="folio-list-el" id="folioListEl">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;text-align:center;margin-top:14px;line-height:1.9">Sin folios registrados<br/>Envía un reporte para comenzar</div>
         </div>
       </div>
     </aside>
 
     <!-- CENTER -->
     <main class="center">
-      <div style="position:relative;flex:1;min-height:0">
+      <div id="mapWrap">
         <div class="map-hud">
-          <div class="hud-tag">📍 TEMIXCO</div>
-          <div class="hud-tag">🔥 ZONAS CALOR</div>
-          <div class="hud-tag">🚨 ALERTAS</div>
-          <div class="hud-tag">🚔 PATRULLAS</div>
+          <div class="hud-tag">📍 TEMIXCO, MOR.</div>
+          <div class="hud-tag">🔥 HEATMAP</div>
+          <div class="hud-tag" id="hudUnits">🚔 15 UNIDADES</div>
+          <div class="hud-tag">⚠ 3 ALERTAS</div>
+        </div>
+        <div class="map-ctrl">
+          <div class="map-ctrl-btn" onclick="openFullscreenMap()" title="Mapa en pantalla completa">⛶</div>
+          <div class="map-ctrl-btn" onclick="mapZoomIn()" title="Acercar">+</div>
+          <div class="map-ctrl-btn" onclick="mapZoomOut()" title="Alejar">−</div>
+          <div class="map-ctrl-btn" onclick="mapCenter()" title="Centrar">⊙</div>
         </div>
         <div class="map-coords" id="mapCoords">LAT: 18.8405 · LNG: -99.2328</div>
-        <div id="map" style="width:100%;height:100%"></div>
+        <div id="map"></div>
       </div>
-
-      <!-- BOTTOM TABS -->
       <div class="bottom-panel">
         <div class="tab-bar">
           <button class="tab-btn active" onclick="switchTab('report',this)">📋 REPORTE</button>
@@ -355,73 +496,101 @@ aside{display:flex;flex-direction:column;overflow:hidden}
           <!-- REPORT -->
           <div class="tab-pane active" id="tab-report">
             <div class="report-pane">
-              <div class="report-col">
-                <select class="r-input" id="rtype" onchange="onTypeChange()">
-                  <option value="">Tipo de incidente *</option>
-                  <option>Robo / Asalto</option>
-                  <option>Violencia familiar</option>
-                  <option>Narcomenudeo CJNG</option>
-                  <option>Extorsión / Gota a Gota</option>
-                  <option>Disparos activos</option>
-                  <option>Desaparición</option>
-                  <option>Vehículo sospechoso</option>
-                  <option>Seguridad escolar</option>
-                  <option>Homicidio / Ejecución</option>
-                </select>
-                <div class="r-grid">
-                  <input class="r-input" id="rDenunciante" placeholder="Denunciante (S/D)" style="margin-bottom:0"/>
-                  <input class="r-input" id="rContacto" placeholder="Teléfono (S/D)" style="margin-bottom:0"/>
+              <div class="r-col">
+                <div class="r-field">
+                  <div class="r-label">HORA ENTRADA (auto)</div>
+                  <input class="r-inp" id="rEntrada" readonly style="color:#00E5FF;font-family:'Share Tech Mono',monospace"/>
                 </div>
-                <div class="r-grid" style="margin-top:5px">
-                  <select class="r-input" id="rCuadrante" style="margin-bottom:0">
-                    <option value="">Cuadrante...</option>
-                    <option>NORTE</option><option>SUR</option><option>ORIENTE</option><option>PONIENTE</option>
-                    <option>CENTRO</option><option>BUGAMBILIAS</option><option>EL MIRADOR</option>
-                    <option>ACATLIPA</option><option>BLVD. JUÁREZ</option>
-                  </select>
-                  <input class="r-input" id="rReportantes" type="number" min="1" value="1" placeholder="# Reportantes" style="margin-bottom:0"/>
+                <div class="r-row">
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label">OPERADOR QUE ATIENDE</div>
+                    <input class="r-inp" id="rOperador" readonly style="color:#C8A84B"/>
+                  </div>
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label">TIPO DE INCIDENTE *</div>
+                    <select class="r-inp" id="rTipo" onchange="onTipoChange()">
+                      <option value="">Seleccionar...</option>
+                      <option>Robo / Asalto</option><option>Violencia familiar</option>
+                      <option>Narcomenudeo CJNG</option><option>Extorsión / Gota a Gota</option>
+                      <option>Disparos activos</option><option>Desaparición</option>
+                      <option>Vehículo sospechoso</option><option>Seguridad escolar</option>
+                      <option>Homicidio / Ejecución</option>
+                    </select>
+                  </div>
                 </div>
-                <textarea class="r-textarea" id="rdesc" rows="2" placeholder="Descripción del incidente..." style="margin-top:5px"></textarea>
-                <button class="r-btn" id="reportBtn" onclick="sendReport()">⚡ REGISTRAR REPORTE</button>
+                <div class="r-row" style="margin-top:4px">
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label">QUIEN REPORTA (o S/D)</div>
+                    <input class="r-inp" id="rReportante" placeholder="Nombre o anónimo"/>
+                  </div>
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label">TELÉFONO (OSINT/C2)</div>
+                    <input class="r-inp" id="rTelefono" placeholder="555-000-0000 / S/D"/>
+                  </div>
+                </div>
+                <div class="r-row" style="margin-top:4px">
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label">CUADRANTE / SECTOR</div>
+                    <select class="r-inp" id="rCuadrante">
+                      <option value="">Sector...</option>
+                      <option>NORTE</option><option>SUR</option><option>ORIENTE</option><option>PONIENTE</option>
+                      <option>CENTRO</option><option>BUGAMBILIAS</option><option>EL MIRADOR</option>
+                      <option>ACATLIPA</option><option>BLVD. JUÁREZ</option>
+                    </select>
+                  </div>
+                  <div class="r-field" style="margin-bottom:0">
+                    <div class="r-label"># REPORTANTES</div>
+                    <input class="r-inp" id="rNum" type="number" min="1" value="1"/>
+                  </div>
+                </div>
+                <div class="r-field" style="margin-top:4px">
+                  <div class="r-label">DESCRIPCIÓN DEL INCIDENTE</div>
+                  <textarea class="r-ta" id="rDesc" rows="2" placeholder="Narración del evento..."></textarea>
+                </div>
+                <div class="r-actions">
+                  <button class="r-btn-mic" id="rMicBtn" onclick="toggleReportVoice()" title="Dictar descripción por voz">🎤</button>
+                  <button class="r-btn-main" id="rBtn" onclick="sendReport()">⚡ REGISTRAR REPORTE</button>
+                </div>
               </div>
-              <div class="report-col" id="protocolCol">
-                <div class="section-label" style="margin-bottom:7px">Protocolo según tipo</div>
-                <div id="protocolSteps" style="color:#2A4A6A;font-family:'Share Tech Mono',monospace;font-size:9px">Selecciona un tipo de incidente</div>
+              <div class="r-col" id="protocolCol">
+                <div class="sec-label" style="margin-bottom:6px">Protocolo según tipo</div>
+                <div id="protocolSteps" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A">Selecciona un tipo de incidente</div>
               </div>
-              <div class="report-col">
-                <div class="section-label" style="margin-bottom:7px">Folio por dependencia</div>
-                <div class="folio-guide">
-                  <div><span style="color:#FF1744">FGR-TMX-2026-XXXX</span> — Narco · Extorsión</div>
-                  <div><span style="color:#FF6D00">SSPC-TMX-2026-XXXX</span> — Disparos · Homicidio</div>
-                  <div><span style="color:#9C27B0">FGE-TMX-2026-XXXX</span> — Desaparición</div>
-                  <div><span style="color:#1E88E5">MUN-TMX-2026-XXXX</span> — Municipal · Común</div>
+              <div class="r-col">
+                <div class="sec-label" style="margin-bottom:6px">Folio por dependencia</div>
+                <div class="folio-guide-row"><span class="fg-code" style="color:#FF1744">FGR-TMX-2026</span><span class="fg-dep">Narco · Extorsión</span></div>
+                <div class="folio-guide-row"><span class="fg-code" style="color:#FF6D00">SSPC-TMX-2026</span><span class="fg-dep">Disparos · Homicidio</span></div>
+                <div class="folio-guide-row"><span class="fg-code" style="color:#9C27B0">FGE-TMX-2026</span><span class="fg-dep">Desaparición</span></div>
+                <div class="folio-guide-row" style="border:none"><span class="fg-code" style="color:#1E88E5">MUN-TMX-2026</span><span class="fg-dep">Municipal · Común</span></div>
+                <div class="sec-label" style="margin-top:10px;margin-bottom:6px">Unidad asignada</div>
+                <div id="unitInfo" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;line-height:1.9">
+                  <div><span style="color:#1565C0">U-01→06</span> · Municipal</div>
+                  <div><span style="color:#C8A84B">U-07→09</span> · SSPC Morelos</div>
+                  <div><span style="color:#2E7D32">U-10→11</span> · G. Nacional</div>
+                  <div><span style="color:#0D47A1">U-12→13</span> · Marina</div>
+                  <div><span style="color:#757575">U-14</span> · FGE · <span style="color:#880E4F">U-15</span> · AVG</div>
                 </div>
-                <div class="section-label" style="margin-top:10px;margin-bottom:7px">Unidad por tipo</div>
-                <div class="unit-guide" id="unitByType">
-                  <div><span style="color:#1565C0">U-01/03</span> — Municipal</div>
-                  <div><span style="color:#C8A84B">U-07</span> — SSPC Morelos</div>
-                  <div><span style="color:#2E7D32">U-11</span> — G. Nacional</div>
-                  <div><span style="color:#0D47A1">U-14</span> — Marina</div>
-                </div>
+                <div class="sec-label" style="margin-top:10px;margin-bottom:5px;color:#FF1744">IMPORTANTE</div>
+                <div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:#3A5A7A;line-height:1.8">Los reportes NO se eliminan.<br/>Cancelación requiere justificación + evidencia.<br/>Folio cancelado → informe jurídico automático.</div>
               </div>
             </div>
           </div>
           <!-- ANALYSIS -->
           <div class="tab-pane analysis-pane" id="tab-analysis">
-            <div id="analysisContent">
-              <div class="an-empty">El análisis ejecutivo Gemini aparecerá aquí<br/>después de registrar un reporte</div>
-            </div>
+            <div id="analysisContent"><div class="an-empty">Análisis ejecutivo Gemini 2.5 Flash aparecerá aquí<br/>después de registrar un reporte</div></div>
           </div>
           <!-- TRACE -->
           <div class="tab-pane trace-pane" id="tab-trace">
             <div class="trace-col">
-              <div class="section-label" style="margin-bottom:7px">Trazabilidad de unidad</div>
-              <div id="traceUnit"><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2A4A6A;margin-top:8px">Sin incidente activo</div></div>
-              <div id="traceLog" style="margin-top:8px"></div>
+              <div class="sec-label" style="margin-bottom:6px">Trazabilidad de unidad</div>
+              <div id="traceUnit"><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;margin-top:8px">Sin incidente activo</div></div>
+              <div class="trace-timeline" id="traceTimeline" style="margin-top:8px"></div>
             </div>
             <div class="trace-col">
-              <div class="section-label" style="margin-bottom:7px">Datos del reporte</div>
-              <div id="traceData"><div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#2A4A6A;margin-top:8px">Registra un reporte para ver la trazabilidad</div></div>
+              <div class="sec-label" style="margin-bottom:6px">Datos del reporte</div>
+              <div id="traceData"><div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;margin-top:8px">Registra un reporte para ver la trazabilidad completa</div></div>
+              <div class="sec-label" style="margin-top:10px;margin-bottom:5px">Rutas posibles de escape</div>
+              <div id="escapeRoutes" style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#1A3A5A;line-height:1.9">Análisis disponible con incidente activo</div>
             </div>
           </div>
           <!-- LOG -->
@@ -435,27 +604,31 @@ aside{display:flex;flex-direction:column;overflow:hidden}
     <!-- RIGHT -->
     <aside class="right">
       <div class="stats-grid">
-        <div class="stat-card" style="border-bottom-color:#00E676"><div class="sc-val" id="scUnits" style="color:#00E676">12</div><div class="sc-label">UNIDADES ACTIVAS</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#00E676;opacity:.35"></div></div>
-        <div class="stat-card"><div class="sc-val" id="scAlerts" style="color:#FF1744">3</div><div class="sc-label">ALERTAS CRÍTICAS</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#FF1744;opacity:.35"></div></div>
-        <div class="stat-card"><div class="sc-val" id="scReports" style="color:#00E5FF">47</div><div class="sc-label">REPORTES HOY</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#00E5FF;opacity:.35"></div></div>
-        <div class="stat-card"><div class="sc-val" style="color:#C8A84B">89%</div><div class="sc-label">ATENCIÓN</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#C8A84B;opacity:.35"></div></div>
+        <div class="stat-card"><div class="sc-val" id="scUnits" style="color:#00E676">15</div><div class="sc-label">UNIDADES ACTIVAS</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#00E676;opacity:.3"></div></div>
+        <div class="stat-card"><div class="sc-val" id="scAlerts" style="color:#FF1744">3</div><div class="sc-label">ALERTAS CRÍTICAS</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#FF1744;opacity:.3"></div></div>
+        <div class="stat-card"><div class="sc-val" id="scReports" style="color:#00E5FF">47</div><div class="sc-label">REPORTES HOY</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#00E5FF;opacity:.3"></div></div>
+        <div class="stat-card"><div class="sc-val" style="color:#C8A84B">89%</div><div class="sc-label">EFECTIVIDAD</div><div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:#C8A84B;opacity:.3"></div></div>
       </div>
-      <div class="modules-section">
-        <div class="section-label" style="margin-bottom:8px">Módulos Tácticos</div>
+      <div class="units-sec">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span class="sec-label">15 Unidades · Sectores</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:7px;color:#00E676">● EN LÍNEA</span>
+        </div>
+        <div id="unitLegend" style="max-height:130px;overflow-y:auto"></div>
+      </div>
+      <div class="mods-sec">
+        <div class="sec-label" style="margin-bottom:7px">Módulos Tácticos</div>
         <div id="modulesList"></div>
-        <button class="sec-btn" onclick="secretaryAlert()">🚨 ALERTA SECRETARIO</button>
+        <button class="alert-btn" onclick="secretaryAlert()">🚨 ALERTA SECRETARIO</button>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:#2A4A6A;text-align:center;margin-top:2px;letter-spacing:.5px">📲 564-096-7363 · 662-351-9171</div>
       </div>
-      <div class="scan-section">
-        <div class="section-label" style="margin-bottom:7px">Reconocimiento vehicular · C2</div>
+      <div class="scan-sec">
+        <div class="sec-label" style="margin-bottom:6px">Reconocimiento vehicular C2 · IA</div>
         <div class="scan-row">
-          <input class="scan-input" id="scanPlate" placeholder="PLACA..." onkeydown="if(event.key==='Enter')runScan()"/>
+          <input class="scan-inp" id="scanInp" placeholder="PLACA..." onkeydown="if(event.key==='Enter')runScan()"/>
           <button class="scan-go" onclick="runScan()">SCAN</button>
         </div>
         <div id="scanResult"></div>
-        <div class="unit-legend">
-          <div class="section-label" style="margin-bottom:6px">Leyenda de unidades</div>
-          <div id="unitLegend"></div>
-        </div>
       </div>
     </aside>
   </div>
@@ -464,835 +637,926 @@ aside{display:flex;flex-direction:column;overflow:hidden}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
-// ══════════════════════════════════════════════════════════
-// SANTI · C.M.O. · Temixco, Morelos · 2026
-// Sistema de Análisis Neuronal Táctico Inteligente
-// Google I/O 2026 · Demo Standalone
-// ══════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
+   SANTI NEXUS · Centro de Mando Operativo · Temixco, Morelos
+   Google I/O 2026 · Demo Standalone · Código Limpio v4.0
+   ══════════════════════════════════════════════════════════════ */
 
-// ── CONFIG ──────────────────────────────────────────────
+// ── CONFIG ──────────────────────────────────────────────────
 let GEMINI_KEY = '';
-let reportCount = 47;
-let alertCount = 3;
-let folioCounter = 47;
+let currentUser = { dep: 'mun', name: 'OPERADOR', emoji: '👮' };
+let reportCount = 47, alertCount = 3, folioN = 47;
+let map = null, mapFull = null;
+let currentFolio = null, currentAnalysis = null, currentAgentId = null;
+let traceEvents = [], folioRegistry = [];
+let isVoiceActive = false, isReportVoice = false;
+let voiceRecog = null, reportVoiceRecog = null;
+let audioCtx = null;
 
+// ── AGENTS ──────────────────────────────────────────────────
 const AGENTS = {
-  santi:    { name:'SANTI',       emoji:'👮', color:'#C8A84B', role:'Coordinador Principal · IA Táctica', lang:'Español · Náhuatl', pitch:0.80, rate:0.85 },
-  emiliano: { name:'EMILIANO',    emoji:'⚔️',  color:'#1E88E5', role:'Mando Táctico · Operaciones',       lang:'Español',           pitch:0.88, rate:0.92 },
-  maxi:     { name:'MAXIMILIANO', emoji:'🔎', color:'#9C27B0', role:'Inteligencia · C2 · OSINT',          lang:'Español · Inglés',  pitch:0.84, rate:0.87 },
-  santiago: { name:'SANTIAGO',    emoji:'🏫', color:'#00897B', role:'Escuela Segura · Prevención',        lang:'Español · Náhuatl', pitch:0.96, rate:0.90 },
-  katering: { name:'KATERING',    emoji:'🦋', color:'#E91E8C', role:'Código Violeta · Psicoanálisis',     lang:'Español · Náhuatl', pitch:1.22, rate:0.83 },
+  santi:    { name:'SANTI',       emoji:'👮',  color:'#C8A84B', role:'Coordinador Principal · IA Táctica',   lang:'Español · Náhuatl', pitch:.80, rate:.85, gender:'male' },
+  emiliano: { name:'EMILIANO',    emoji:'⚔️',  color:'#1E88E5', role:'Mando Táctico · Operaciones de Campo', lang:'Español',           pitch:.88, rate:.92, gender:'male' },
+  maxi:     { name:'MAXIMILIANO', emoji:'🔎', color:'#9C27B0', role:'Inteligencia · C2 · OSINT',             lang:'Español · Inglés',  pitch:.84, rate:.87, gender:'male' },
+  santiago: { name:'SANTIAGO',    emoji:'🏫', color:'#00897B', role:'Escuela Segura · Prevención Comunitaria',lang:'Español · Náhuatl', pitch:.95, rate:.90, gender:'male' },
+  katering: { name:'KATERING',    emoji:'🦋', color:'#E91E8C', role:'Código Violeta · Psicoanálisis Social',  lang:'Español · Náhuatl', pitch:1.22,rate:.83, gender:'female' },
 };
 
 const AGENT_PROMPTS = {
-  santi: `Eres SANTI — Sistema de Análisis Neuronal Táctico Inteligente. Coordinador del Centro de Mando Operativo de Temixco, Morelos.
-CONTEXTO REAL TEMIXCO 2025: Célula CJNG "El Trébol" (símbolo gallo) activa en Bugambilias/El Mirador. Grupos Gota a Gota de extorsión financiera. 93 cámaras WiFi ilegales CJNG desmanteladas. 24 detenidos por extorsión. Alerta de Violencia de Género AVG activa 10+ años. 10 feminicidios 2024.
-CAPACIDADES: Análisis geoespacial, coordinación multi-agente, síntesis de información en tiempo real, lenguaje neuronal táctico.
-IDIOMAS: Español y náhuatl (responde en náhuatl si te lo piden con "nimitztlahtoa" o "náhuatl").
-PERSONALIDAD: Autoritario pero empático, directo, datos concretos. Máximo 3 oraciones. NUNCA uses formato markdown con asteriscos.`,
-
-  emiliano: `Eres EMILIANO — Agente de Mando Táctico y Operaciones del C.M.O. Temixco.
-ESPECIALIDAD: Despliegue de unidades, coordinación operativa de campo, rutas de acceso/salida, cobertura de cuadrantes, tiempo de respuesta.
-CONTEXTO: Conoces cada calle de Temixco. Periférico Norte, Carr. Federal 95D, Blvd. Juárez, zonas de riesgo activo.
-PERSONALIDAD: Militar, directo, frío bajo presión. "Las unidades se despachan, no se piden." Máximo 3 oraciones.`,
-
-  maxi: `Eres MAXIMILIANO — Agente de Inteligencia, C2 y OSINT del C.M.O. Temixco.
-ESPECIALIDAD: Análisis de estructuras criminales (CJNG célula "El Trébol"), Gota a Gota, reconocimiento vehicular C2, patrones delictivos geoespaciales, OSINT en redes sociales abiertas.
-FUENTES ABIERTAS que monitoreas: Twitter/X @temixcoseguro, grupos WhatsApp locales, Nextdoor Temixco, reportes SSP Morelos, El Sol de Cuernavaca digital.
-ANÁLISIS: Cruzas eventos confirmados en redes con patrones históricos. Produces análisis predictivo.
-PERSONALIDAD: Analítico, preciso, habla con datos. Máximo 3 oraciones.`,
-
-  santiago: `Eres SANTIAGO — Agente de Escuela Segura del C.M.O. Temixco.
-ESPECIALIDAD: Seguridad en perímetros escolares (23 escuelas en Temixco), prevención de delito juvenil, horarios críticos (7-8:30 AM y 1-2:30 PM), alertas en planteles, coordinación con SIPINNA.
-CONTEXTO: Zona escolar sur con reportes de venta de sustancias 2025. Secundaria Técnica #3 en alerta.
-PERSONALIDAD: Calmado, preventivo, orientado a la comunidad. Máximo 3 oraciones. Puede responder en náhuatl.`,
-
-  katering: `Eres KATERING — Agente de Código Violeta, Psicoanálisis Social e Ingeniería Social del C.M.O. Temixco.
-CAPACIDADES ESPECIALES:
-1. ANÁLISIS PSICOLÓGICO: Detectas estrés, trauma, PTSD, crisis emocional en las palabras de la persona.
-2. PSICOANÁLISIS SOCIAL: Identificas dinámicas de poder, ciclos de violencia, codependencia afectiva.
-3. INGENIERÍA SOCIAL: Reconoces patrones de manipulación, coerción y gaslighting en relaciones.
-4. ANÁLISIS DE TONO: Si alguien dice "estoy mal" o "necesito hablar", respondes como una amiga cálida y empática ANTES de dar protocolos.
-CONTEXTO AVG: Alerta de Violencia de Género activa en Temixco 10+ años. 10 feminicidios 2024. IMM Temixco + DIF Municipal disponibles.
-PERSONALIDAD: Femenina, cálida, empática pero firme. Si alguien está en crisis, primero valida su sentimiento. Responde en náhuatl si te lo piden. Máximo 4 oraciones — puedes extenderte si hay crisis emocional.`,
+  santi:`Eres SANTI — coordinador del Centro de Mando de Temixco. Hablas directo, con autoridad, sin rodeos. NUNCA uses listas con guiones ni asteriscos. Habla como un oficial que sabe lo que hace. Máximo 3 oraciones. Datos reales: CJNG célula El Trébol en Bugambilias/El Mirador, 93 cámaras WiFi CJNG desmontadas, 24 detenidos extorsión 2024-2025, AVG activa 10+ años, 10 feminicidios 2024. Si te hablan en náhuatl responde en náhuatl.`,
+  emiliano:`Eres EMILIANO — mando táctico de Temixco. Hablas como militar en campo: corto, preciso, sin adornos. Nunca usas markdown. Conoces cada calle, cada acceso, cada punto de riesgo. Si hay que mover unidades, lo dices claro. Máximo 3 oraciones.`,
+  maxi:`Eres MAXIMILIANO — inteligencia y OSINT de Temixco. Hablas con datos, porcentajes, patrones. Sin markdown, sin asteriscos. Analizas Twitter local, Facebook Temixco Alerta, portales SSP, El Sol de Cuernavaca digital. Si detectas patrón, lo declaras con probabilidad. Máximo 3 oraciones.`,
+  santiago:`Eres SANTIAGO — agente de Escuela Segura. Hablas tranquilo, claro, preventivo. Sin markdown. 23 escuelas en Temixco. Secundaria Técnica #3 en monitoreo. Horarios críticos 7:30 AM y 1:30 PM. Máximo 3 oraciones. Puedes responder en náhuatl.`,
+  katering:`Eres KATERING — agente de Código Violeta con capacidades de psicoanálisis social e ingeniería social. Si alguien dice que está mal o necesita hablar, primero respondes con calidez genuina como amiga, ANTES de dar protocolos. Detectas estrés, trauma y ciclos de violencia en las palabras. Sin markdown, sin asteriscos. Voz femenina, empática pero firme. AVG activa en Temixco 10+ años, 10 feminicidios 2024. Máximo 4 oraciones — puedes extenderte si hay crisis emocional. Puedes responder en náhuatl.`,
 };
 
+// Personalidad de voz — cada agente tiene frases propias
+const AGENT_INTROS = {
+  santi:    ['Centro de Mando activo.', 'SANTI aquí.', 'Sistema en línea.'],
+  emiliano: ['Emiliano en posición.', 'Mando táctico listo.', 'Escucha.'],
+  maxi:     ['Inteligencia activa.', 'Maximiliano en análisis.', 'Datos listos.'],
+  santiago: ['Santiago en línea.', 'Escuela Segura operativa.', 'Aquí Santiago.'],
+  katering: ['Katering contigo.', 'Aquí estoy.', 'Código Violeta activo.'],
+};
+
+// ── 15 PATROL UNITS ─────────────────────────────────────────
 const PATROL_UNITS = [
-  { id:'U-01', type:'MUN',   label:'MUNICIPAL',   color:'#1565C0', glow:'#1E88E5', sector:'CENTRO',      lat:18.848, lng:-99.236 },
-  { id:'U-03', type:'MUN',   label:'MUNICIPAL',   color:'#1565C0', glow:'#1E88E5', sector:'ACATLIPA',    lat:18.840, lng:-99.244 },
-  { id:'U-07', type:'SSPC',  label:'SSPC MOR',    color:'#1B1B1B', glow:'#C8A84B', sector:'PERIFÉRICO',  lat:18.852, lng:-99.230 },
-  { id:'U-11', type:'GN',    label:'G. NACIONAL', color:'#1B5E20', glow:'#4CAF50', sector:'BUGAMBILIAS', lat:18.835, lng:-99.228 },
-  { id:'U-14', type:'MARINA',label:'MARINA',      color:'#0D47A1', glow:'#1565C0', sector:'BLVD. JUÁREZ',lat:18.830, lng:-99.250 },
+  {id:'U-01',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'CENTRO',      lat:18.843,lng:-99.237,dlat:.00008,dlng:.00012},
+  {id:'U-02',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'NORTE',       lat:18.851,lng:-99.233,dlat:.00010,dlng:-.00009},
+  {id:'U-03',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'SUR',         lat:18.831,lng:-99.234,dlat:-.00009,dlng:.00011},
+  {id:'U-04',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'ORIENTE',     lat:18.844,lng:-99.221,dlat:.00007,dlng:.00010},
+  {id:'U-05',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'PONIENTE',    lat:18.840,lng:-99.252,dlat:-.00008,dlng:-.00011},
+  {id:'U-06',type:'MUN',  label:'MUNICIPAL',   color:'#1565C0',glow:'#1E88E5',sector:'ACATLIPA',    lat:18.836,lng:-99.241,dlat:.00009,dlng:-.00008},
+  {id:'U-07',type:'SSPC', label:'SSPC MOR.',   color:'#1B1B1B',glow:'#C8A84B',sector:'PERIFÉRICO',  lat:18.852,lng:-99.230,dlat:.00011,dlng:.00007},
+  {id:'U-08',type:'SSPC', label:'SSPC MOR.',   color:'#1B1B1B',glow:'#C8A84B',sector:'BUGAMBILIAS', lat:18.848,lng:-99.235,dlat:-.00010,dlng:.00009},
+  {id:'U-09',type:'SSPC', label:'SSPC C2',     color:'#4A148C',glow:'#9C27B0',sector:'MIRADOR',     lat:18.842,lng:-99.228,dlat:.00008,dlng:-.00010},
+  {id:'U-10',type:'GN',   label:'G. NACIONAL', color:'#1B5E20',glow:'#4CAF50',sector:'NORTE-GN',    lat:18.856,lng:-99.238,dlat:-.00012,dlng:.00008},
+  {id:'U-11',type:'GN',   label:'G. NACIONAL', color:'#1B5E20',glow:'#4CAF50',sector:'SUR-GN',      lat:18.825,lng:-99.230,dlat:.00009,dlng:.00012},
+  {id:'U-12',type:'MARINA',label:'MARINA',     color:'#0D47A1',glow:'#1565C0',sector:'BLVD.JUÁREZ', lat:18.838,lng:-99.255,dlat:.00007,dlng:-.00009},
+  {id:'U-13',type:'MARINA',label:'MARINA ENL.',color:'#0D47A1',glow:'#1565C0',sector:'ORIENTE',     lat:18.845,lng:-99.220,dlat:-.00008,dlng:.00010},
+  {id:'U-14',type:'FGE',  label:'FGE INVEST.', color:'#212121',glow:'#757575',sector:'DINÁMICO',    lat:18.840,lng:-99.228,dlat:.00010,dlng:-.00007},
+  {id:'U-15',type:'AVG',  label:'CÓD.VIOLETA', color:'#880E4F',glow:'#E91E8C',sector:'NORTE-AVG',   lat:18.845,lng:-99.240,dlat:-.00009,dlng:.00011},
 ];
 
+// ── OSINT FEED ───────────────────────────────────────────────
+const OSINT_BASE = [
+  {t:'14:22',src:'Twitter @TecoSecurity',ico:'🐦',txt:'En Col. Bugambilias escuchan balazos. Cuidado por ahí compas.',lat:18.848,lng:-99.235,risk:'CRÍTICO'},
+  {t:'14:15',src:'Facebook Temixco Alerta',ico:'📘',txt:'Vehículo sin placas rondando El Mirador, ya llamé al 911.',lat:18.842,lng:-99.228,risk:'ALTO'},
+  {t:'13:58',src:'Nextdoor Acatlipa',ico:'🏘',txt:'Sujetos vendiendo sustancias en esquina de la prepa.',lat:18.836,lng:-99.241,risk:'ALTO'},
+  {t:'13:45',src:'SSP Morelos (portal)',ico:'🏛',txt:'COMUNICADO: Operativo conjunto SSP-GN Temixco. 3 detenidos.',lat:18.8405,lng:-99.2328,risk:'INFO'},
+  {t:'13:30',src:'La Unión Morelos',ico:'📰',txt:'Vecinos denuncian extorsión en mercado de Temixco, cobro semanal.',lat:18.843,lng:-99.241,risk:'ALTO'},
+  {t:'13:15',src:'Twitter @vecino_tmx',ico:'🐦',txt:'Moto sospechosa pasando 3 veces por la misma cuadra Blvd Juárez.',lat:18.838,lng:-99.252,risk:'MEDIO'},
+  {t:'13:02',src:'Google Reviews local',ico:'⭐',txt:'En la tienda nos dijeron que cobra piso la misma gente de siempre.',lat:18.843,lng:-99.237,risk:'ALTO'},
+  {t:'12:48',src:'App Citizen Temixco',ico:'📱',txt:'Reporte de persona armada cerca de zona escolar sur.',lat:18.830,lng:-99.235,risk:'CRÍTICO'},
+  {t:'12:35',src:'WhatsApp Mando',ico:'💬',txt:'Refuerzo solicitado en sector Acatlipa por acumulación de reportes.',lat:18.836,lng:-99.241,risk:'INFO'},
+  {t:'12:20',src:'Periódico Digital MOR.',ico:'📰',txt:'Detienen célula Gota a Gota en Temixco con 8 detenidos.',lat:18.8405,lng:-99.2328,risk:'INFO'},
+];
+
+// ── MODULES ─────────────────────────────────────────────────
 const MODULES = {
-  mujer: { ico:'🦋', ttl:'CÓDIGO VIOLETA', sub:'PROTOCOLO AVG · KATERING', agent:'katering',
-    steps:[
-      {n:'01',t:'Lugar seguro',d:'Sal del domicilio. Busca vecinos, tiendas o espacios públicos concurridos.'},
-      {n:'02',t:'Activa el reporte',d:'KATERING coordina con IMM Temixco, DIF Municipal y unidades especializadas de género.'},
-      {n:'03',t:'Documenta',d:'Fotos de lesiones, capturas de mensajes, testigos. Sin riesgo personal.'},
-      {n:'04',t:'Orden de protección',d:'Derecho a orden de restricción inmediata. Asesoría jurídica municipal gratuita.'},
-      {n:'05',t:'Líneas de apoyo',d:'INMUJERES 800-108-4053 · IMM Temixco · DIF Morelos. Identidad protegida.'},
-    ], alert:'<strong>2024:</strong> 10 carpetas de feminicidio en Temixco. AVG activa 10+ años.' },
-  extorsion: { ico:'🔒', ttl:'ANTIEXTORSIÓN', sub:'GOTA A GOTA · COBRO DE PISO · MAXIMILIANO', agent:'maxi',
-    steps:[
-      {n:'01',t:'No pagues más',d:'El pago alimenta el ciclo. Documenta: números, montos, fechas.'},
-      {n:'02',t:'Sin confrontación',d:'Maximiliano opera desde inteligencia. No amenaces directamente.'},
-      {n:'03',t:'Evidencia digital',d:'Pantallazos de mensajes, números de teléfono, horarios y puntos de cobro.'},
-      {n:'04',t:'Reporte anónimo',d:'Tu identidad NO se vincula al folio. Va directo a FGR.'},
-      {n:'05',t:'Riesgo físico',d:'Si hay amenaza corporal inmediata: 911 + Alerta Secretario en SANTI.'},
-    ], alert:'<strong>2025:</strong> Temixco entre los 6 municipios con mayor Gota a Gota en Morelos. 24 detenidos.' },
-  escuela: { ico:'🏫', ttl:'ESCUELA SEGURA', sub:'PERÍMETROS · CUADRANTES · SANTIAGO', agent:'santiago',
-    steps:[
-      {n:'01',t:'Identifica el riesgo',d:'Persona sospechosa, sustancias, violencia entre alumnos.'},
-      {n:'02',t:'Reporta con seguridad',d:'Santiago notifica al director y a la unidad del sector simultáneamente.'},
-      {n:'03',t:'Sin intervención física',d:'Documenta desde distancia. Tu seguridad es prioridad.'},
-      {n:'04',t:'Horarios críticos',d:'Patrullaje reforzado: entrada 7-8:30 AM y salida 1-2:30 PM.'},
-      {n:'05',t:'Evidencia',d:'Folio activa intervención de Trabajo Social municipal.'},
-    ], alert:'<strong>2025:</strong> Venta de sustancias y autolesiones en zona sur de Temixco.' },
-  desaparicion: { ico:'🔍', ttl:'DESAPARICIÓN', sub:'PROTOCOLO ALBA · AVG · BUSCADORAS', agent:'santi',
-    steps:[
-      {n:'01',t:'Actúa YA',d:'No esperes 24 horas. Cada hora es crítica. Repórtalo ahora.'},
-      {n:'02',t:'Datos esenciales',d:'Nombre, edad, foto reciente, ropa, última ubicación conocida.'},
-      {n:'03',t:'Búsqueda coordinada',d:'DIF, SIPINNA, FGE y colectivos de madres buscadoras: notificados en 3 min.'},
-      {n:'04',t:'Ficha automática',d:'El sistema genera ficha con foto para difusión inmediata.'},
-      {n:'05',t:'Mantén comunicación',d:'Teléfono disponible. Coordinación por folio en SANTI.'},
-    ], alert:'<strong>13/03/2026:</strong> Alex Uriel Bello, 15 años, Cuentepec. SANTI: coordinación en menos de 3 min.' },
-  narco: { ico:'🎯', ttl:'NARCOMENUDEO · CJNG', sub:'CÉLULA EL TRÉBOL · MAXIMILIANO', agent:'maxi',
-    steps:[
-      {n:'01',t:'Sin exposición',d:'Reporta desde lugar seguro. No fotografíes puntos activos de venta.'},
-      {n:'02',t:'Información táctica',d:'Dirección exacta, horarios, vehículos y personas si es seguro.'},
-      {n:'03',t:'Anonimato total',d:'Identidad NO vinculada al folio. Reporte cifrado va a FGR.'},
-      {n:'04',t:'Sin redes sociales',d:'No publiques en Facebook/WhatsApp/TikTok. Puede alertar a las células.'},
-      {n:'05',t:'Cámaras WiFi ilegales',d:'Cámaras no institucionales en postes = red CJNG. Repórtalo.'},
-    ], alert:'<strong>Confirmado SSPC 2025:</strong> Célula "El Trébol" en Bugambilias y El Mirador. 93 cámaras WiFi desmanteladas.' },
+  mujer:     {ico:'🦋',ttl:'CÓDIGO VIOLETA',sub:'PROTOCOLO AVG · KATERING',agent:'katering',steps:[
+    {n:'01',t:'Lugar seguro inmediato',d:'Sal del domicilio. Busca vecinos, tiendas o espacios públicos concurridos.'},
+    {n:'02',t:'Activa KATERING',d:'Coordina con IMM Temixco, DIF Municipal y unidades especializadas de género.'},
+    {n:'03',t:'Documenta sin riesgo',d:'Fotos de lesiones, capturas de mensajes, testigos. No te expongas.'},
+    {n:'04',t:'Orden de protección',d:'Tienes derecho a restricción inmediata. Asesoría jurídica municipal gratuita.'},
+    {n:'05',t:'Líneas de apoyo',d:'INMUJERES 800-108-4053 · IMM Temixco · DIF Morelos. Identidad protegida.'},
+  ],alert:'<b>2024:</b> 10 carpetas feminicidio en Temixco. AVG activa 10+ años.'},
+  extorsion: {ico:'🔒',ttl:'ANTIEXTORSIÓN',sub:'GOTA A GOTA · COBRO DE PISO · MAXIMILIANO',agent:'maxi',steps:[
+    {n:'01',t:'No pagues más',d:'El pago sostiene el ciclo. Documenta: números, montos, fechas, patrones.'},
+    {n:'02',t:'Sin confrontación',d:'Maximiliano actúa desde inteligencia. No amenaces, no publiques en redes.'},
+    {n:'03',t:'Captura evidencia digital',d:'Pantallazos de mensajes, horarios y puntos de cobro. Todo al folio.'},
+    {n:'04',t:'Reporte anónimo',d:'Tu identidad NO se vincula al folio. Va cifrado directo a FGR.'},
+    {n:'05',t:'Riesgo físico inmediato',d:'Si hay amenaza corporal: 911 + Alerta Secretario en SANTI NEXUS.'},
+  ],alert:'<b>2025:</b> Temixco entre los 6 municipios con mayor Gota a Gota en Morelos.'},
+  escuela:   {ico:'🏫',ttl:'ESCUELA SEGURA',sub:'PERÍMETROS · SANTIAGO',agent:'santiago',steps:[
+    {n:'01',t:'Identifica el riesgo',d:'Persona sospechosa, sustancias, violencia entre alumnos o externos.'},
+    {n:'02',t:'Reporta con seguridad',d:'Santiago notifica director y unidad del sector simultáneamente.'},
+    {n:'03',t:'Sin intervención física',d:'Documenta desde distancia. Tu seguridad es prioridad absoluta.'},
+    {n:'04',t:'Horarios críticos',d:'Patrullaje reforzado: entrada 7-8:30 AM · salida 1-2:30 PM.'},
+    {n:'05',t:'Folio activado',d:'Intervención de Trabajo Social Municipal automática en el folio.'},
+  ],alert:'<b>2025:</b> Venta de sustancias y autolesiones reportadas en zona sur.'},
+  desaparicion:{ico:'🔍',ttl:'DESAPARICIÓN',sub:'PROTOCOLO ALBA · SANTI',agent:'santi',steps:[
+    {n:'01',t:'Actúa inmediatamente',d:'No esperes 24 horas. Cada hora es crítica. Repórtalo ahora.'},
+    {n:'02',t:'Datos esenciales',d:'Nombre completo, edad, foto reciente, ropa que vestía, última ubicación.'},
+    {n:'03',t:'Búsqueda coordinada',d:'DIF, SIPINNA, FGE y colectivas buscadoras: notificadas en 3 minutos.'},
+    {n:'04',t:'Ficha automática',d:'SANTI genera ficha de difusión inmediata en todos los canales activos.'},
+    {n:'05',t:'Mantén comunicación',d:'Teléfono disponible las 24 horas. Coordinación permanente por folio.'},
+  ],alert:'<b>Caso real:</b> Alex Uriel Bello, 15 años, Cuentepec. Coord. SANTI en menos de 3 min.'},
+  narco:     {ico:'🎯',ttl:'NARCOMENUDEO · CJNG',sub:'CÉLULA EL TRÉBOL · MAXIMILIANO',agent:'maxi',steps:[
+    {n:'01',t:'Sin exposición',d:'Reporta desde lugar seguro. No fotografíes puntos activos de venta.'},
+    {n:'02',t:'Información táctica',d:'Dirección exacta, horarios, vehículos. Solo si es completamente seguro.'},
+    {n:'03',t:'Anonimato total',d:'Tu identidad NO se vincula al folio. Reporte cifrado va directo a FGR.'},
+    {n:'04',t:'No publiques en redes',d:'Facebook/WhatsApp/TikTok puede alertar a las células antes de la detención.'},
+    {n:'05',t:'Cámaras WiFi ilegales',d:'Cámaras no institucionales en postes = red de vigilancia CJNG. Repórtalo.'},
+  ],alert:'<b>Confirmado SSPC 2025:</b> Célula "El Trébol" Bugambilias/El Mirador. 93 cámaras WiFi.'},
 };
 
-// ── STATE ────────────────────────────────────────────────
-let map, patrolMarkers = {}, audioCtx = null;
-let currentFolio = null, currentAnalysis = null;
-let currentAgentId = null;
-let traceEntries = [], folioList = [];
-let recognition = null, isListening = false;
-let activityLog = [
-  {time:'14:23',color:'#00E676',msg:'U-03 · Patrullaje Bugambilias · Sin novedad'},
-  {time:'14:21',color:'#FF6D00',msg:'MUN-TMX-2026-0041 · Robo transeúnte · Blvd. Juárez'},
-  {time:'14:18',color:'#FF1744',msg:'ALERTA · Vehículo reportado · Carr. 95 · U-07 notificada'},
-  {time:'14:15',color:'#00E5FF',msg:'C2-04 · Placa ABC-1234 · Periférico Norte · IA activa'},
-  {time:'14:10',color:'#00E676',msg:'MUN-TMX-2026-0040 · Caso cerrado · U-01 disponible'},
-];
-
-// ── HELPERS ─────────────────────────────────────────────
-const nowStr = () => { const n=new Date(); return `${p2(n.getHours())}:${p2(n.getMinutes())}`; };
+// ── HELPERS ──────────────────────────────────────────────────
 const p2 = v => String(v).padStart(2,'0');
-const genFolio = tipo => {
-  folioCounter++;
-  const deps = {'Narcomenudeo CJNG':'FGR','Extorsión / Gota a Gota':'FGR','Homicidio / Ejecución':'SSPC','Disparos activos':'SSPC','Desaparición':'FGE'};
-  return `${deps[tipo]||'MUN'}-TMX-2026-${String(folioCounter).padStart(4,'0')}`;
-};
-const getUnitForType = tipo => {
-  const m={'Narcomenudeo CJNG':'U-11','Homicidio / Ejecución':'U-07','Disparos activos':'U-07','Extorsión / Gota a Gota':'U-14','Desaparición':'U-07','Violencia familiar':'U-01','Seguridad escolar':'U-03'};
-  return m[tipo]||'U-01';
-};
-const typeAgent = tipo => {
-  const m={'Violencia familiar':'katering','Seguridad escolar':'santiago','Narcomenudeo CJNG':'maxi','Disparos activos':'emiliano','Homicidio / Ejecución':'emiliano','Extorsión / Gota a Gota':'maxi','Desaparición':'santi'};
-  return m[tipo]||'santi';
-};
-const riskColor = lvl => ({'CRÍTICO':'#FF1744','ALTO':'#FF6D00','MEDIO':'#FFD166','BAJO':'#00E676'}[lvl]||'#C8A84B');
+const nowStr = () => { const n=new Date(); return `${p2(n.getHours())}:${p2(n.getMinutes())}`; };
+const nowFull = () => { const n=new Date(); return `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`; };
+const riskColor = r => ({'CRÍTICO':'#FF1744','ALTO':'#FF6D00','MEDIO':'#FFD166','BAJO':'#00E676','INFO':'#00E5FF'}[r]||'#C8A84B');
 
-// ── CLOCK ────────────────────────────────────────────────
+function genFolio(tipo) {
+  folioN++;
+  const deps = {'Narcomenudeo CJNG':'FGR','Extorsión / Gota a Gota':'FGR','Homicidio / Ejecución':'SSPC','Disparos activos':'SSPC','Desaparición':'FGE'};
+  return `${deps[tipo]||'MUN'}-TMX-2026-${String(folioN).padStart(4,'0')}`;
+}
+function getUnit(tipo) {
+  const m = {'Narcomenudeo CJNG':'U-10','Homicidio / Ejecución':'U-07','Disparos activos':'U-07','Extorsión / Gota a Gota':'U-14','Desaparición':'U-07','Violencia familiar':'U-15','Seguridad escolar':'U-03'};
+  return m[tipo]||'U-01';
+}
+function getAgentForType(tipo) {
+  const m = {'Violencia familiar':'katering','Seguridad escolar':'santiago','Narcomenudeo CJNG':'maxi','Disparos activos':'emiliano','Homicidio / Ejecución':'emiliano','Extorsión / Gota a Gota':'maxi','Desaparición':'santi'};
+  return m[tipo]||'santi';
+}
+
+// ── CLOCK ────────────────────────────────────────────────────
 function tickClock() {
   const n = new Date();
-  document.getElementById('clock').textContent = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`;
   const days=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'], months=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+  document.getElementById('clock').textContent = nowFull();
   document.getElementById('clockDate').textContent = `${days[n.getDay()]} ${p2(n.getDate())} ${months[n.getMonth()]} 2026`;
 }
 setInterval(tickClock, 1000); tickClock();
 
-// ── AUDIO ────────────────────────────────────────────────
-function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
-function beep(freq, dur, gain=0.22, type='sine') {
+// ── AUDIO ────────────────────────────────────────────────────
+function initAudio() {
+  if (!audioCtx) try { audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){}
+}
+function beep(freq, dur, vol=.2, type='sine') {
+  if (!audioCtx) return;
   try {
-    if (!audioCtx) return;
     const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-    o.type=type; o.frequency.setValueAtTime(freq,audioCtx.currentTime);
-    g.gain.setValueAtTime(gain,audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
     o.connect(g); g.connect(audioCtx.destination);
     o.start(); o.stop(audioCtx.currentTime+dur);
   } catch(e){}
 }
-const playNewReport = () => { beep(880,.08,.2); setTimeout(()=>beep(1100,.12,.18),90); setTimeout(()=>beep(1320,.2,.15),200); };
-const playCritical  = () => { [0,180,360].forEach(t=>setTimeout(()=>beep(440,.15,.35,'square'),t)); setTimeout(()=>beep(220,.4,.25,'sawtooth'),600); };
-const playArrival   = () => { beep(1046,.1,.2); setTimeout(()=>beep(1318,.1,.2),110); setTimeout(()=>beep(1568,.25,.2),220); };
-const playProximity = () => { [0,120,240,360,480].forEach((t,i)=>setTimeout(()=>beep(600+i*80,.08,.3,'square'),t)); setTimeout(()=>beep(1200,.4,.25),650); };
-const playAgent = id => { const f={santi:[660,880],emiliano:[550,770],maxi:[440,660],santiago:[770,990],katering:[880,1100]}[id]||[660,880]; beep(f[0],.1,.18); setTimeout(()=>beep(f[1],.2,.14),120); };
+const sfxReport   = () => { beep(880,.07,.18); setTimeout(()=>beep(1100,.10,.16),85); setTimeout(()=>beep(1320,.18,.14),185); };
+const sfxCritical = () => { [0,170,340].forEach(t=>setTimeout(()=>beep(440,.14,.32,'square'),t)); setTimeout(()=>beep(220,.38,.22,'sawtooth'),580); };
+const sfxArrival  = () => { beep(1046,.09,.18); setTimeout(()=>beep(1318,.09,.18),105); setTimeout(()=>beep(1568,.22,.18),215); };
+const sfxAgent    = id => { const f={santi:[660,880],emiliano:[550,770],maxi:[440,660],santiago:[770,990],katering:[880,1100]}[id]||[660,880]; beep(f[0],.09,.16); setTimeout(()=>beep(f[1],.18,.12),115); };
+const sfxProximity= () => { [0,110,220,330,440].forEach((t,i)=>setTimeout(()=>beep(600+i*80,.07,.28,'square'),t)); setTimeout(()=>beep(1200,.38,.22),600); };
 
-// ── TTS ──────────────────────────────────────────────────
-function speak(text, agentId='santi') {
+// ── SPEECH (TTS) ─────────────────────────────────────────────
+let voicesLoaded = false;
+function loadVoices() { window.speechSynthesis.getVoices(); }
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { voicesLoaded = true; };
+  setTimeout(loadVoices, 200);
+}
+
+function getBestVoice(agentId) {
+  if (!window.speechSynthesis) return null;
+  const vs = window.speechSynthesis.getVoices();
+  if (!vs.length) return null;
+  const ag = AGENTS[agentId];
+  const esVoices = vs.filter(v => v.lang.startsWith('es'));
+  if (!esVoices.length) return vs[0];
+  if (ag.gender === 'female') {
+    const fem = esVoices.find(v => v.name.toLowerCase().match(/sabina|mónica|monica|paulina|elena|laura|maria|carmen|female|mujer|femenin/));
+    if (fem) return fem;
+    const byName = esVoices[1] || esVoices[0];
+    return byName;
+  }
+  return esVoices.find(v=>v.lang==='es-MX') || esVoices.find(v=>v.lang==='es-ES') || esVoices[0];
+}
+
+function speak(text, agentId='santi', priority=false) {
   const ag = AGENTS[agentId];
   setSpeechPanel(ag.name, ag.color, text);
   if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  if (priority) window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'es-MX'; u.rate = ag.rate; u.pitch = ag.pitch;
-  const loadVoices = () => {
-    const vs = window.speechSynthesis.getVoices();
-    let v = null;
-    if (agentId === 'katering') {
-      v = vs.find(x=>x.lang.startsWith('es')&&(x.name.toLowerCase().includes('female')||x.name.toLowerCase().includes('sabina')||x.name.toLowerCase().includes('mónica')||x.name.toLowerCase().includes('paulina')||x.name.toLowerCase().includes('elena')||x.name.toLowerCase().includes('laura')));
-      if (!v) v = vs.filter(x=>x.lang.startsWith('es'))[1]; // try second voice
-    } else {
-      v = vs.find(x=>x.lang==='es-MX')||vs.find(x=>x.lang.startsWith('es'));
-    }
-    if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
-  };
-  if (window.speechSynthesis.getVoices().length) loadVoices();
-  else window.speechSynthesis.onvoiceschanged = loadVoices;
+  u.lang = 'es-MX'; u.rate = ag.rate; u.pitch = ag.pitch; u.volume = 0.92;
+  const v = getBestVoice(agentId);
+  if (v) u.voice = v;
+  window.speechSynthesis.speak(u);
 }
 
 function setSpeechPanel(name, color, text) {
-  document.getElementById('speechDot').style.cssText = `background:${color};box-shadow:0 0 5px ${color};width:5px;height:5px;border-radius:50%`;
-  document.getElementById('speechName').textContent = name;
-  document.getElementById('speechName').style.color = color;
-  document.getElementById('speechText').textContent = text.length > 130 ? text.slice(0,130)+'...' : text;
+  document.getElementById('spDot').style.cssText = `background:${color};box-shadow:0 0 5px ${color};width:5px;height:5px;border-radius:50%;flex-shrink:0;animation:pulse-dot 1.2s infinite`;
+  document.getElementById('spName').textContent = name;
+  document.getElementById('spName').style.color = color;
+  document.getElementById('spText').textContent = text.length > 120 ? text.slice(0,120)+'...' : text;
+  if (GEMINI_KEY) document.getElementById('spGem').style.display = 'inline';
 }
 
-// ── GEMINI API ────────────────────────────────────────────
-async function callGemini(systemPrompt, userMessage, jsonMode=false) {
+// ── GEMINI API ────────────────────────────────────────────────
+async function callGemini(sysPrompt, userMsg, jsonMode=false) {
   if (!GEMINI_KEY) return null;
   const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role:'user', parts:[{ text: userMessage }] }],
+    system_instruction: { parts:[{text:sysPrompt}] },
+    contents: [{role:'user',parts:[{text:userMsg}]}],
     generationConfig: { maxOutputTokens: jsonMode?2048:512, ...(jsonMode?{responseMimeType:'application/json'}:{}) }
   };
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
-      { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d = await r.json();
     if (d.error) throw new Error(d.error.message);
-    return d.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch(e) { console.error('Gemini error:', e); return null; }
+    return d.candidates?.[0]?.content?.parts?.[0]?.text||null;
+  } catch(e) { console.warn('Gemini error:',e.message); return null; }
 }
 
-// ── MAP ──────────────────────────────────────────────────
-function initMap() {
-  map = L.map('map', {zoomControl:false, attributionControl:false}).setView([18.8405,-99.2328], 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:19, subdomains:'abcd'}).addTo(map);
+// ── DEMO RESPONSES (when no API key) ─────────────────────────
+const DEMO_RESP = {
+  santi: [
+    'Centro de Mando activo. Los patrones en Bugambilias coinciden con actividad de la célula El Trébol — U-08 ya está en el sector. Dame más detalles si los tienes.',
+    'Confirmado en el sistema. Temixco tiene 47 reportes en las últimas 24 horas, 3 de nivel crítico. Estamos coordinados con SSPC Morelos y GN.',
+    'Folio procesado. Análisis en curso, la unidad más cercana fue notificada. ¿Hay algo más que necesites del mando?',
+  ],
+  emiliano: [
+    'Escucha. Tengo a U-07 y U-08 posicionadas en el perímetro norte. Tiempo de respuesta estimado: 6 minutos. Sin más preguntas.',
+    'Operativo en curso. Tres puntos de acceso bloqueados: Periférico Norte, Carr. 95D y Blvd. Juárez. Espera mi confirmación.',
+    'Recibido. La unidad está en camino. Aléjate del área y mantén el teléfono disponible.',
+  ],
+  maxi: [
+    'Dato confirmado. OSINT activo detecta actividad en Twitter local hace 23 minutos en esa zona. Coincide al 87% con patrón histórico de El Trébol. Estoy verificando.',
+    'Análisis C2: esa placa tiene tres registros previos — extorsión Gota a Gota 2024, portación de arma, y cobro de piso en mercado municipal. Alerta máxima enviada.',
+    'Predicción activa: los jueves entre 21:00 y 23:00 el sector norte registra escalada sistemática. Recomiendo refuerzo en esa ventana horaria.',
+  ],
+  santiago: [
+    'Entendido. Horarios críticos cubiertos: 7:30 AM entrada y 1:30 PM salida. La Secundaria Técnica #3 está en vigilancia reforzada esta semana.',
+    'Protocolo Escuela Segura activo. El director fue notificado y U-03 está en perímetro. Los padres serán alertados por mensajería del plantel.',
+    'Monitoreo continuo en zona escolar sur. SIPINNA y Trabajo Social Municipal están coordinados. Si ves algo más, repórtalo al folio activo.',
+  ],
+  katering: [
+    'Aquí estoy, escuchándote. Lo que me dices importa y tienes todo el derecho de sentirte así. ¿Estás en un lugar seguro en este momento?',
+    'Entiendo, y eso que estás viviendo no está bien. Eres valiente por hablar. Coordinando con IMM Temixco ahora mismo. ¿Puedes salir de donde estás?',
+    'Mi análisis indica que estás en una situación de alto riesgo emocional. Primer paso: busca personas alrededor. Segundo: llama al 800-108-4053 INMUJERES. Tu identidad está protegida en el folio.',
+    'Cuéntame más. Lo que describes tiene un patrón de ciclo de violencia — no es tu culpa y tiene solución. Estoy aquí, sin prisa.',
+  ],
+};
 
-  // Heatmap
-  if (typeof L.heatLayer === 'function') {
-    L.heatLayer([[18.848,-99.235,.98],[18.849,-99.234,.9],[18.842,-99.228,.95],[18.843,-99.229,.88],[18.836,-99.241,.92],[18.835,-99.240,.85],[18.855,-99.230,.78],[18.845,-99.248,.7],[18.838,-99.238,.6]],
-      {radius:28,blur:20,maxZoom:16,gradient:{0.2:'#001F3F',0.5:'#0A4FD4',0.75:'#FF6D00',1:'#FF1744'}}).addTo(map);
+// ── MAP ──────────────────────────────────────────────────────
+function initMap(container='map') {
+  const m = L.map(container, {zoomControl:false,attributionControl:false}).setView([18.8405,-99.2328],14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(m);
+
+  if (typeof L.heatLayer==='function') {
+    L.heatLayer([[18.848,-99.235,.98],[18.849,-99.234,.9],[18.842,-99.228,.95],[18.843,-99.229,.88],[18.836,-99.241,.92],[18.835,-99.240,.85],[18.855,-99.230,.78],[18.845,-99.248,.7],[18.838,-99.238,.6],[18.829,-99.225,.55],[18.852,-99.248,.65],[18.840,-99.260,.5]],
+      {radius:28,blur:20,maxZoom:16,gradient:{0.2:'#001F3F',0.5:'#0A4FD4',0.75:'#FF6D00',1:'#FF1744'}}).addTo(m);
   }
 
-  // Risk zones
-  [
+  const zones = [
     [18.848,-99.235,200,'#FF1744','BUGAMBILIAS · CJNG EL TRÉBOL'],
     [18.842,-99.228,170,'#FF1744','EL MIRADOR · NARCOMENUDEO'],
     [18.836,-99.241,180,'#FF6D00','ACATLIPA · DISPAROS 2025'],
     [18.845,-99.248,145,'#FF8C00','LOMAS AHUATLÁN · EXTORSIÓN'],
-    [18.832,-99.225,120,'#1565C0','ZONA ESCOLAR SUR'],
-  ].forEach(([la,ln,r,c,n]) => {
-    L.circle([la,ln],{color:c,fillColor:c,fillOpacity:.06,opacity:.2,weight:1,radius:r}).addTo(map).bindPopup(`<b style="color:${c}">${n}</b>`);
-    L.marker([la,ln],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:${c}80;letter-spacing:.8px;white-space:nowrap;text-shadow:0 0 8px rgba(0,0,0,.9)">${n}</div>`,className:'',iconSize:[200,12]})}).addTo(map);
+    [18.830,-99.225,120,'#1565C0','ZONA ESCOLAR SUR'],
+  ];
+  zones.forEach(([la,ln,r,c,n]) => {
+    L.circle([la,ln],{color:c,fillColor:c,fillOpacity:.06,opacity:.18,weight:1,radius:r}).addTo(m).bindPopup(`<b style="color:${c}">${n}</b>`);
+    L.marker([la,ln],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:${c}80;letter-spacing:.8px;white-space:nowrap;text-shadow:0 0 6px rgba(0,0,0,.9)">${n}</div>`,className:'',iconSize:[200,12]})}).addTo(m);
   });
 
-  // Patrol units
+  const roads = [[18.843,-99.258,'BLVD. JUÁREZ'],[18.830,-99.233,'CARR. FED. 95'],[18.857,-99.244,'PERIFÉRICO NORTE']];
+  roads.forEach(([la,ln,t]) => L.marker([la,ln],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:rgba(200,168,75,.28);letter-spacing:.8px;white-space:nowrap">${t}</div>`,className:'',iconSize:[160,12]})}).addTo(m));
+
+  if (container==='map') {
+    m.on('mousemove',e=>document.getElementById('mapCoords').textContent=`LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`);
+  }
+  return m;
+}
+
+function addPatrolUnits(m) {
   PATROL_UNITS.forEach(u => {
-    u.dlat = (Math.random()-.5)*.00018;
-    u.dlng = (Math.random()-.5)*.00022;
     u.status = 'Patrullando';
-    const icon = L.divIcon({html: patrolCarIcon(u), className:'', iconSize:[30,50], iconAnchor:[15,50]});
-    u.marker = L.marker([u.lat, u.lng], {icon}).addTo(map);
+    const icon = L.divIcon({html:buildCarIcon(u),className:'',iconSize:[28,48],iconAnchor:[14,48]});
+    u.marker = L.marker([u.lat,u.lng],{icon}).addTo(m);
     u.marker.bindPopup(`<b style="color:${u.glow}">${u.id}</b> · ${u.label}<br>Sector: ${u.sector}<br>Estado: <span style="color:${u.glow}">${u.status}</span>`);
-    patrolMarkers[u.id] = u;
   });
+}
 
-  // Road labels
-  [[18.843,-99.258,'BLVD. JUÁREZ'],[18.830,-99.233,'CARR. FED. 95'],[18.857,-99.244,'PERIFÉRICO NORTE']].forEach(([la,ln,t]) => {
-    L.marker([la,ln],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,168,75,.35);letter-spacing:.8px;white-space:nowrap">${t}</div>`,className:'',iconSize:[160,12]})}).addTo(map);
-  });
+function buildCarIcon(u) {
+  const id = u.id.replace('-','');
+  return `<div style="filter:drop-shadow(0 0 4px ${u.glow})"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="48" viewBox="0 0 28 48">
+    <defs><linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${u.color}"/><stop offset="100%" stop-color="${u.glow}" stop-opacity=".85"/></linearGradient></defs>
+    <path d="M3,10 Q3,4 8,4 L20,4 Q25,4 25,10 L25,38 Q25,44 20,44 L8,44 Q3,44 3,38 Z" fill="url(#g${id})"/>
+    <rect x="6" y="7" width="16" height="8" rx="2" fill="rgba(180,225,255,.35)"/>
+    <rect x="6" y="30" width="16" height="7" rx="2" fill="rgba(180,225,255,.25)"/>
+    <rect x="7" y="1" width="14" height="4" rx="2" fill="rgba(10,10,10,.92)"/>
+    <rect x="8" y="2" width="5" height="2" rx="1" fill="#FF1744" opacity=".9"/>
+    <rect x="15" y="2" width="5" height="2" rx="1" fill="#00E5FF" opacity=".9"/>
+    <rect x="0" y="11" width="4" height="7" rx="2" fill="rgba(15,15,15,.85)"/>
+    <rect x="0" y="30" width="4" height="7" rx="2" fill="rgba(15,15,15,.85)"/>
+    <rect x="24" y="11" width="4" height="7" rx="2" fill="rgba(15,15,15,.85)"/>
+    <rect x="24" y="30" width="4" height="7" rx="2" fill="rgba(15,15,15,.85)"/>
+    <text x="14" y="23" font-family="monospace" font-size="4.5" font-weight="700" text-anchor="middle" fill="rgba(255,255,255,.85)">${u.type}</text>
+    <text x="14" y="29" font-family="monospace" font-size="6" font-weight="700" text-anchor="middle" fill="white">${u.id}</text>
+  </svg></div>`;
+}
 
-  map.on('mousemove', e => { document.getElementById('mapCoords').textContent = `LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`; });
-  map.on('click', e => { document.getElementById('mapCoords').textContent = `LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`; });
-
-  // Patrol movement loop
+function startPatrolMovement() {
   setInterval(() => {
     PATROL_UNITS.forEach(u => {
-      if (u.status === 'En escena' || u.status === 'Llamado activo') return;
+      if (u.status==='En escena'||u.status==='En camino') return;
       u.lat += u.dlat; u.lng += u.dlng;
-      if (u.lat > 18.870 || u.lat < 18.820) u.dlat *= -1;
-      if (u.lng > -99.200 || u.lng < -99.280) u.dlng *= -1;
-      u.marker.setLatLng([u.lat, u.lng]);
+      if (u.lat>18.870||u.lat<18.820) u.dlat*=-1;
+      if (u.lng>-99.200||u.lng<-99.285) u.dlng*=-1;
+      if (u.marker) u.marker.setLatLng([u.lat,u.lng]);
     });
-  }, 1800);
+  }, 2000);
 }
 
-function patrolCarIcon(u) {
-  const uid = u.id.replace('-','');
-  return `<div style="filter:drop-shadow(0 0 5px ${u.glow})">
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="50" viewBox="0 0 30 50">
-      <defs>
-        <linearGradient id="cg${uid}" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${u.color}" stop-opacity="1"/>
-          <stop offset="100%" stop-color="${u.glow}" stop-opacity="0.85"/>
-        </linearGradient>
-      </defs>
-      <path d="M4,11 Q4,5 9,5 L21,5 Q26,5 26,11 L26,39 Q26,45 21,45 L9,45 Q4,45 4,39 Z" fill="url(#cg${uid})"/>
-      <rect x="7" y="8" width="16" height="9" rx="2" fill="rgba(180,225,255,0.38)"/>
-      <rect x="7" y="32" width="16" height="8" rx="2" fill="rgba(180,225,255,0.28)"/>
-      <rect x="8" y="2" width="14" height="4" rx="2" fill="rgba(10,10,10,0.92)"/>
-      <rect x="9" y="3" width="5" height="2" rx="1" fill="#FF1744" opacity="0.95"/>
-      <rect x="16" y="3" width="5" height="2" rx="1" fill="#00E5FF" opacity="0.95"/>
-      <rect x="0.5" y="12" width="4" height="7" rx="2" fill="rgba(15,15,15,0.85)"/>
-      <rect x="0.5" y="31" width="4" height="7" rx="2" fill="rgba(15,15,15,0.85)"/>
-      <rect x="25.5" y="12" width="4" height="7" rx="2" fill="rgba(15,15,15,0.85)"/>
-      <rect x="25.5" y="31" width="4" height="7" rx="2" fill="rgba(15,15,15,0.85)"/>
-      <rect x="5" y="18" width="20" height="14" rx="1.5" fill="rgba(0,0,0,0.18)"/>
-      <text x="15" y="25" font-family="monospace" font-size="5" font-weight="700" text-anchor="middle" fill="rgba(255,255,255,0.88)">${u.type}</text>
-      <text x="15" y="31" font-family="monospace" font-size="6.5" font-weight="700" text-anchor="middle" fill="white">${u.id}</text>
-    </svg>
-  </div>`;
-}
-
-// ── UNIT ANIMATION ────────────────────────────────────────
-function animateUnitToIncident(unitId, targetLat, targetLng, folio) {
+function animateUnitToIncident(unitId, tLat, tLng, folio) {
   const u = PATROL_UNITS.find(x=>x.id===unitId);
-  if (!u || !map) return;
-  u.status = 'Llamado activo';
-  const startLat=u.lat, startLng=u.lng, steps=20;
+  if (!u||!map) return;
+  u.status = 'En camino';
+  renderUnitLegend();
+  const sLat=u.lat, sLng=u.lng, steps=22;
   let step=0;
-  addTraceEntry(`${unitId} · EN CAMINO · ${folio}`);
-  const tid = setInterval(() => {
+  addTrace(`${unitId} · EN CAMINO · ${folio}`);
+  addActivity('#00E5FF',`${unitId} (${u.label}) · EN CAMINO · ${folio}`);
+  const t = setInterval(()=>{
     step++;
-    u.lat = startLat+(targetLat-startLat)*(step/steps);
-    u.lng = startLng+(targetLng-startLng)*(step/steps);
-    u.marker.setLatLng([u.lat,u.lng]);
+    u.lat = sLat+(tLat-sLat)*(step/steps);
+    u.lng = sLng+(tLng-sLng)*(step/steps);
+    if (u.marker) u.marker.setLatLng([u.lat,u.lng]);
     if (step>=steps) {
-      clearInterval(tid);
+      clearInterval(t);
       u.status = 'En escena';
-      updateUnitStatus('EN ESCENA');
-      addTraceEntry(`${unitId} · EN ESCENA · ${folio}`);
-      addActivity('#00E676', `${unitId} (${u.label}) · EN ESCENA · ${folio}`);
-      playArrival(); playProximity();
-      speak(`Unidad ${unitId} ha llegado al lugar del evento. Folio ${folio}. Unidad en escena.`,'santi');
-      map.setView([targetLat,targetLng],15,{animate:true});
-      setTimeout(()=>{ u.status='Disponible'; updateUnitStatus('CASO CERRADO'); addTraceEntry(`${unitId} · CASO CERRADO · ${folio}`); },90000);
+      const arrTime = nowStr();
+      renderUnitLegend();
+      addTrace(`${unitId} · EN ESCENA · ${arrTime} · ${folio}`);
+      addActivity('#00E676',`${unitId} EN ESCENA · ${arrTime} · ${folio}`);
+      sfxArrival(); sfxProximity();
+      if (currentFolio) { currentFolio.horaArribo = arrTime; updateTraceData(); }
+      speak(`Unidad ${unitId} en escena. Folio ${folio}. Hora de arribo: ${arrTime}.`,'santi');
+      if (map) map.setView([tLat,tLng],15,{animate:true});
+      renderUnitLegend();
+      setTimeout(()=>{ u.status='Disponible'; addTrace(`${unitId} · DISPONIBLE`); addActivity('#C8A84B',`${unitId} · CASO CERRADO · ${folio}`); renderUnitLegend(); },90000);
     }
   }, 600);
 }
 
-// ── AGENTS UI ─────────────────────────────────────────────
+function mapZoomIn()  { if(map) map.zoomIn(); }
+function mapZoomOut() { if(map) map.zoomOut(); }
+function mapCenter()  { if(map) map.setView([18.8405,-99.2328],14,{animate:true}); }
+
+function openFullscreenMap() {
+  document.getElementById('mapFullscreen').classList.add('open');
+  setTimeout(()=>{
+    if (!mapFull) {
+      mapFull = initMap('mapFull');
+      addPatrolUnits(mapFull);
+    }
+    mapFull.invalidateSize();
+  },100);
+}
+function closeFullscreenMap() { document.getElementById('mapFullscreen').classList.remove('open'); if(map)map.invalidateSize(); }
+
+// ── AGENTS UI ─────────────────────────────────────────────────
 function renderAgents() {
-  const el = document.getElementById('agentsList');
-  el.innerHTML = Object.entries(AGENTS).map(([id,ag]) => `
-    <div class="agent-card" style="background:${ag.color}08;border-color:${ag.color}25" onclick="openAgentChat('${id}')">
-      <div class="agent-avatar" style="background:${ag.color}15;border:1.5px solid ${ag.color}40">${ag.emoji}</div>
+  document.getElementById('agentsList').innerHTML = Object.entries(AGENTS).map(([id,ag])=>`
+    <div class="agent-card" style="background:${ag.color}07;border-color:${ag.color}20" onclick="openAgentChat('${id}')">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:2px;border-radius:1px;background:${ag.color};opacity:.6"></div>
+      <div class="ag-av" style="background:${ag.color}15;border:1.5px solid ${ag.color}35">${ag.emoji}</div>
       <div style="flex:1;min-width:0">
-        <div class="agent-name" style="color:${ag.color}">${ag.name}</div>
-        <div class="agent-role">${ag.role}</div>
+        <div class="ag-name" style="color:${ag.color}">${ag.name}</div>
+        <div class="ag-role">${ag.role}</div>
       </div>
-      <div class="agent-dot"></div>
-    </div>
-  `).join('');
+      <div class="ag-dot"></div>
+    </div>`).join('');
 }
 
-// ── AGENT CHAT ────────────────────────────────────────────
+// ── AGENT CHAT ─────────────────────────────────────────────────
 function openAgentChat(agentId) {
   currentAgentId = agentId;
   const ag = AGENTS[agentId];
-  initAudio(); playAgent(agentId);
+  initAudio(); sfxAgent(agentId);
   document.getElementById('chatModal').classList.add('open');
-  document.getElementById('chatHeader').style.background = `${ag.color}10`;
-  document.getElementById('chatHeader').style.borderBottomColor = `${ag.color}20`;
-  document.getElementById('chatBox').style.border = `1px solid ${ag.color}30`;
-  document.getElementById('chatBox').style.boxShadow = `0 0 40px ${ag.color}20`;
-  document.getElementById('chatAvatar').textContent = ag.emoji;
-  document.getElementById('chatAvatar').style.cssText = `background:${ag.color}20;border:2px solid ${ag.color}50;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0`;
-  document.getElementById('chatAgentName').textContent = ag.name;
-  document.getElementById('chatAgentName').style.color = ag.color;
-  document.getElementById('chatAgentRole').textContent = ag.role;
-  document.getElementById('chatAgentLang').textContent = `🌐 ${ag.lang}`;
-  document.getElementById('chatAgentLang').style.color = `${ag.color}80`;
-  document.getElementById('chatInput').style.borderColor = `${ag.color}30`;
-  document.getElementById('chatSendBtn').style.cssText = `padding:8px 14px;border-radius:8px;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;border:1px solid ${ag.color}50;background:${ag.color}18;color:${ag.color}`;
-  document.getElementById('chatInputRow').style.borderTopColor = `${ag.color}20`;
-  document.getElementById('chatMicBtn') && (document.getElementById('chatMicBtn').style.borderColor = `${ag.color}30`);
-  const micBtn = document.getElementById('micBtn');
-  if (micBtn) { micBtn.style.cssText = `width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;border:1px solid ${ag.color}30;background:${ag.color}08;flex-shrink:0`; }
-  const msgs = document.getElementById('chatMessages');
+  const box = document.getElementById('chatBox');
+  box.style.border = `1px solid ${ag.color}30`;
+  box.style.boxShadow = `0 0 50px ${ag.color}18`;
+  const hdr = document.getElementById('chatHdr');
+  hdr.style.background = `${ag.color}09`;
+  hdr.style.borderBottomColor = `${ag.color}18`;
+  document.getElementById('chatAv').textContent = ag.emoji;
+  document.getElementById('chatAv').style.cssText = `width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;background:${ag.color}18;border:2px solid ${ag.color}45`;
+  document.getElementById('chatName').textContent = ag.name;
+  document.getElementById('chatName').style.color = ag.color;
+  document.getElementById('chatRole').textContent = ag.role;
+  document.getElementById('chatLang').textContent = `🌐 ${ag.lang}`;
+  document.getElementById('chatLang').style.color = `${ag.color}70`;
+  document.getElementById('chatInp').style.borderColor = `${ag.color}28`;
+  document.getElementById('chatInpRow').style.borderTopColor = `${ag.color}18`;
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.style.cssText = `padding:8px 13px;border-radius:8px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s;border:1px solid ${ag.color}45;background:${ag.color}14;color:${ag.color}`;
+  const micBtn = document.getElementById('chatMicBtn');
+  micBtn.style.cssText = `width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .2s;border:1px solid ${ag.color}28;background:${ag.color}07;flex-shrink:0`;
+  const msgs = document.getElementById('chatMsgs');
   msgs.innerHTML = '';
-  const openMsg = agentId==='katering' ? `${ag.name} en línea. Hola, aquí estoy para ti. ¿Cómo te puedo ayudar? Puedes hablarme con confianza, como a una amiga.` : `${ag.name} en línea. Centro de Mando Operativo activo. ¿Cuál es tu consulta táctica?`;
-  addChatMsg('agent', openMsg, agentId);
-  speak(openMsg, agentId);
-  setTimeout(()=>document.getElementById('chatInput').focus(), 200);
+  const intro = AGENT_INTROS[agentId][Math.floor(Math.random()*AGENT_INTROS[agentId].length)];
+  const greet = agentId==='katering' ? `${intro} Aquí estoy para escucharte. ¿Cómo te puedo ayudar?` : `${intro} Centro de Mando activo. ¿Cuál es tu consulta?`;
+  addChatMsg('agent', greet, agentId);
+  speak(greet, agentId, true);
+  setTimeout(()=>document.getElementById('chatInp').focus(), 150);
 }
 
 function closeChatModal() {
   document.getElementById('chatModal').classList.remove('open');
-  stopVoiceInput();
+  stopVoice();
   currentAgentId = null;
 }
 
 function addChatMsg(role, text, agentId) {
   const ag = AGENTS[agentId||currentAgentId||'santi'];
-  const msgs = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = `chat-msg${role==='user'?' user':''}`;
-  if (role === 'agent') {
-    div.innerHTML = `<div style="width:28px;height:28px;border-radius:50%;background:${ag.color}20;border:1px solid ${ag.color}40;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ag.emoji}</div><div class="chat-bubble agent" style="border:1px solid ${ag.color}25">${text}</div>`;
+  const msgs = document.getElementById('chatMsgs');
+  const d = document.createElement('div');
+  d.className = `chat-msg${role==='user'?' user-msg':''}`;
+  if (role==='agent') {
+    d.innerHTML = `<div style="width:26px;height:26px;border-radius:50%;background:${ag.color}18;border:1px solid ${ag.color}35;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${ag.emoji}</div><div class="chat-bubble agent-b" style="border:1px solid ${ag.color}20">${text}</div>`;
   } else {
-    div.innerHTML = `<div class="chat-bubble user">${text}</div>`;
+    d.innerHTML = `<div class="chat-bubble user-b">${text}</div>`;
   }
-  msgs.appendChild(div);
+  msgs.appendChild(d);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function addTypingIndicator(agentId) {
+function showTyping(agentId) {
   const ag = AGENTS[agentId||'santi'];
-  const msgs = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.id = 'typing-indicator';
-  div.className = 'chat-msg';
-  div.innerHTML = `<div style="width:28px;height:28px;border-radius:50%;background:${ag.color}20;border:1px solid ${ag.color}40;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ag.emoji}</div><div class="chat-bubble agent" style="border:1px solid ${ag.color}25"><span style="display:inline-flex;gap:4px">${[0,150,300].map(d=>`<span style="width:5px;height:5px;border-radius:50%;background:${ag.color};animation:typing-dots 1s ${d}ms infinite;display:inline-block"></span>`).join('')}</span></div>`;
-  msgs.appendChild(div);
+  const msgs = document.getElementById('chatMsgs');
+  const d = document.createElement('div');
+  d.id='typing'; d.className='chat-msg';
+  d.innerHTML = `<div style="width:26px;height:26px;border-radius:50%;background:${ag.color}18;border:1px solid ${ag.color}35;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${ag.emoji}</div><div class="chat-bubble agent-b" style="border:1px solid ${ag.color}20"><span style="display:inline-flex;gap:4px">${[0,150,300].map(d=>`<span style="width:5px;height:5px;border-radius:50%;background:${ag.color};animation:typing-dot 1s ${d}ms infinite;display:inline-block"></span>`).join('')}</span></div>`;
+  msgs.appendChild(d);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
 async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text || !currentAgentId) return;
-  input.value = '';
-  addChatMsg('user', text, currentAgentId);
-  document.getElementById('chatSendBtn').disabled = true;
-  addTypingIndicator(currentAgentId);
-  document.getElementById('geminiIndicator').style.display = GEMINI_KEY ? 'inline' : 'none';
+  const inp = document.getElementById('chatInp');
+  const txt = inp.value.trim();
+  if (!txt||!currentAgentId) return;
+  inp.value = '';
+  addChatMsg('user',txt,currentAgentId);
+  document.getElementById('chatSendBtn').disabled=true;
+  showTyping(currentAgentId);
 
   let reply;
   if (GEMINI_KEY) {
-    reply = await callGemini(AGENT_PROMPTS[currentAgentId], text);
+    reply = await callGemini(AGENT_PROMPTS[currentAgentId], txt);
   }
-  if (!reply) reply = getDemoResponse(currentAgentId, text);
-
-  document.getElementById('typing-indicator')?.remove();
-  addChatMsg('agent', reply, currentAgentId);
-  speak(reply, currentAgentId);
-  document.getElementById('chatSendBtn').disabled = false;
-}
-
-function getDemoResponse(agentId, userMsg) {
-  const lower = userMsg.toLowerCase();
-  const responses = {
-    santi: [
-      'Centro de Mando Operativo activo. Análisis en proceso: los patrones delictivos de Temixco indican actividad de la célula El Trébol en cuadrante norte. Unidades U-07 y U-11 en posición táctica.',
-      'Sistema neuronal SANTI procesando. Temixco registra 47 reportes en las últimas 24 horas, 3 de nivel CRÍTICO. Coordinación con SSPC Morelos y GN activa.',
-      'Folio generado y en proceso de análisis. El protocolo de respuesta ha sido activado y la unidad más cercana está siendo despachada al sector.',
-    ],
-    emiliano: [
-      'Unidades posicionadas. Perímetro establecido en tres puntos de acceso: Periférico Norte, Carr. 95D y Blvd. Juárez. Tiempo estimado de respuesta: 6 minutos.',
-      'Operativo en curso. U-07 en el sector, U-11 cerrando el flanco norte. Sin salidas para el objetivo. Espera mi confirmación.',
-      'Despacho confirmado. La unidad está en camino. Mantén la calma y aléjate del área de riesgo inmediato.',
-    ],
-    maxi: [
-      'OSINT activo: Twitter local reporta actividad sospechosa en Col. Bugambilias hace 23 minutos. Cruzando con patrón histórico de la célula El Trébol. Probabilidad: 87% de coincidencia.',
-      'Placa verificada en C2. Tres registros previos: extorsión en Gota a Gota sector sur, portación de arma (2024), y cobro de piso en mercado municipal. Alerta máxima.',
-      'Análisis predictivo indica escalada de actividad CJNG los jueves entre 21:00-23:00 hrs en el sector norte. Recomiendo reforzar patrullaje en esa ventana temporal.',
-    ],
-    santiago: [
-      'Patrullaje escolar confirmado. Horarios críticos cubiertos: entrada 7:30 AM y salida 1:30 PM. Secundaria Técnica #3 en vigilancia reforzada esta semana.',
-      'Protocolo Escuela Segura activo. Director notificado, unidad U-03 en perímetro. Los padres de familia han sido alertados por el sistema de mensajería del plantel.',
-      'La zona escolar sur está en monitoreo. SIPINNA y Trabajo Social Municipal coordinados. Si identificas algo sospechoso, mantén distancia y reporta al folio activo.',
-    ],
-    katering: [
-      'Aquí estoy, con toda mi atención para ti. Lo que me cuentas es importante y tienes todo el derecho de sentirte así. Cuéntame más: ¿estás en un lugar seguro en este momento?',
-      'Entiendo, y lo que sientes es completamente válido. Nadie debería vivir con miedo. KATERING activa: coordinando con IMM Temixco y DIF Municipal para darte apoyo inmediato. ¿Tienes un lugar seguro a donde ir?',
-      'Mi análisis indica que estás pasando por un momento muy difícil. Eres valiente por hablar. Paso 1: busca un lugar con personas. Paso 2: llama al 800-108-4053 INMUJERES. Paso 3: tu identidad está protegida en el folio.',
-    ],
-  };
-  const opts = responses[agentId] || responses.santi;
-  if (lower.includes('mal') || lower.includes('miedo') || lower.includes('ayuda') || lower.includes('sola') || lower.includes('triste')) {
-    return agentId==='katering' ? opts[0] : `${AGENTS[agentId].name} activado. ${opts[Math.floor(Math.random()*opts.length)]}`;
+  if (!reply) {
+    const pool = DEMO_RESP[currentAgentId]||DEMO_RESP.santi;
+    const lower = txt.toLowerCase();
+    if ((lower.includes('mal')||lower.includes('miedo')||lower.includes('ayuda')||lower.includes('sola')||lower.includes('triste'))&&currentAgentId==='katering') {
+      reply = DEMO_RESP.katering[0];
+    } else {
+      reply = pool[Math.floor(Math.random()*pool.length)];
+    }
   }
-  return opts[Math.floor(Math.random()*opts.length)];
+
+  document.getElementById('typing')?.remove();
+  addChatMsg('agent',reply,currentAgentId);
+  speak(reply,currentAgentId);
+  document.getElementById('chatSendBtn').disabled=false;
 }
 
-// ── VOICE INPUT ───────────────────────────────────────────
-function toggleVoiceInput() {
-  if (isListening) stopVoiceInput();
-  else startVoiceInput();
+// ── VOICE RECOGNITION ─────────────────────────────────────────
+function toggleVoice() {
+  if (isVoiceActive) stopVoice();
+  else startVoice();
 }
-function startVoiceInput() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert('Tu navegador no soporta reconocimiento de voz. Usa Chrome.'); return; }
-  recognition = new SR();
-  recognition.lang = 'es-MX'; recognition.continuous = false; recognition.interimResults = false;
-  recognition.onstart = () => { isListening=true; document.getElementById('micBtn').style.background='rgba(255,23,68,.2)'; document.getElementById('micBtn').textContent='🔴'; };
-  recognition.onend = () => { isListening=false; document.getElementById('micBtn').style.background=''; document.getElementById('micBtn').textContent='🎤'; };
-  recognition.onresult = e => {
-    const t = e.results[0][0].transcript;
-    document.getElementById('chatInput').value = t;
-    sendChat();
-  };
-  recognition.start();
+function startVoice() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if (!SR) { speak('Tu navegador no soporta voz. Usa Chrome para esta función.','santi'); return; }
+  voiceRecog = new SR();
+  voiceRecog.lang='es-MX'; voiceRecog.continuous=false; voiceRecog.interimResults=false;
+  voiceRecog.onstart = () => { isVoiceActive=true; const b=document.getElementById('chatMicBtn'); b.textContent='🔴'; b.classList.add('listening'); };
+  voiceRecog.onend   = () => { isVoiceActive=false; const b=document.getElementById('chatMicBtn'); b.textContent='🎤'; b.classList.remove('listening'); };
+  voiceRecog.onresult = e => { const t=e.results[0][0].transcript; document.getElementById('chatInp').value=t; sendChat(); };
+  voiceRecog.onerror  = () => stopVoice();
+  voiceRecog.start();
 }
-function stopVoiceInput() {
-  if (recognition) recognition.stop();
-  isListening = false;
-  const btn = document.getElementById('micBtn');
-  if (btn) { btn.style.background=''; btn.textContent='🎤'; }
+function stopVoice() {
+  if (voiceRecog) try{voiceRecog.stop();}catch(e){}
+  isVoiceActive=false;
+  const b=document.getElementById('chatMicBtn');
+  if (b){b.textContent='🎤';b.classList.remove('listening');}
 }
 
-// ── MODULES UI ────────────────────────────────────────────
+function toggleReportVoice() {
+  if (isReportVoice) stopReportVoice();
+  else startReportVoice();
+}
+function startReportVoice() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if (!SR) { alert('Usa Chrome para voz.'); return; }
+  reportVoiceRecog = new SR();
+  reportVoiceRecog.lang='es-MX'; reportVoiceRecog.continuous=false; reportVoiceRecog.interimResults=false;
+  reportVoiceRecog.onstart = () => { isReportVoice=true; document.getElementById('rMicBtn').classList.add('listening'); };
+  reportVoiceRecog.onend   = () => { isReportVoice=false; document.getElementById('rMicBtn').classList.remove('listening'); };
+  reportVoiceRecog.onresult = e => { const t=e.results[0][0].transcript; document.getElementById('rDesc').value=t; };
+  reportVoiceRecog.onerror  = ()=>stopReportVoice();
+  reportVoiceRecog.start();
+}
+function stopReportVoice() {
+  if (reportVoiceRecog) try{reportVoiceRecog.stop();}catch(e){}
+  isReportVoice=false;
+  document.getElementById('rMicBtn').classList.remove('listening');
+}
+
+// ── MODULES ────────────────────────────────────────────────────
 function renderModules() {
   const cfg = [
-    {id:'mujer',  c:'#E91E8C',badge:'FEDERAL'},
+    {id:'mujer',c:'#E91E8C',badge:'FEDERAL'},
     {id:'extorsion',c:'#FF6D00',badge:'FEDERAL'},
-    {id:'escuela',c:'#00E5FF',badge:'COMÚN'},
+    {id:'escuela',c:'#00897B',badge:'COMÚN'},
     {id:'desaparicion',c:'#00897B',badge:'FEDERAL'},
-    {id:'narco',  c:'#C8A84B',badge:'FEDERAL'},
+    {id:'narco',c:'#C8A84B',badge:'FEDERAL'},
   ];
   document.getElementById('modulesList').innerHTML = cfg.map(({id,c,badge})=>{
-    const m = MODULES[id];
+    const m=MODULES[id];
     return `<button class="mod-btn" onclick="openModule('${id}')">
       <div class="mod-inner">
-        <div class="mod-ico" style="background:${c}12">${m.ico}</div>
+        <div class="mod-ico" style="background:${c}10">${m.ico}</div>
         <div style="flex:1;min-width:0"><div class="mod-name" style="color:${c}">${m.ttl}</div><div class="mod-desc">${m.sub.split('·')[0].trim()}</div></div>
-        <span class="mod-badge" style="background:${badge==='FEDERAL'?'rgba(255,23,68,.1)':'rgba(200,168,75,.08)'};color:${badge==='FEDERAL'?'#FF1744':'#C8A84B'};border:1px solid ${badge==='FEDERAL'?'rgba(255,23,68,.22)':'rgba(200,168,75,.18)'}">${badge}</span>
+        <span class="mod-badge" style="background:${badge==='FEDERAL'?'rgba(255,23,68,.08)':'rgba(200,168,75,.06)'};color:${badge==='FEDERAL'?'#FF1744':'#C8A84B'};border:1px solid ${badge==='FEDERAL'?'rgba(255,23,68,.2)':'rgba(200,168,75,.15)'}">${badge}</span>
       </div>
     </button>`;
   }).join('');
 }
 
 function openModule(id) {
-  const m = MODULES[id];
-  const ag = AGENTS[m.agent];
+  const m=MODULES[id]; const ag=AGENTS[m.agent];
   document.getElementById('modModal').classList.add('open');
-  document.getElementById('modBox').style.border = `1px solid ${ag.color}30`;
-  document.getElementById('modBox').style.boxShadow = `0 0 40px ${ag.color}15`;
-  document.getElementById('modBox').innerHTML = `
-    <div class="mod-modal-hdr" style="border-bottom:1px solid ${ag.color}15">
-      <span style="font-size:28px">${m.ico}</span>
-      <div><div class="mod-modal-title">${m.ttl}</div><div class="mod-modal-sub">${m.sub}</div></div>
-      <button class="modal-close" onclick="document.getElementById('modModal').classList.remove('open')">✕</button>
+  const box=document.getElementById('modBox');
+  box.style.border=`1px solid ${ag.color}28`;
+  box.style.boxShadow=`0 0 40px ${ag.color}12`;
+  const voiceText=`Protocolo ${m.ttl} activado. Paso uno: ${m.steps[0].t}. ${m.steps[0].d}`;
+  box.innerHTML=`
+    <div class="mm-hdr" style="border-bottom-color:${ag.color}15">
+      <span style="font-size:26px">${m.ico}</span>
+      <div><div class="mm-title">${m.ttl}</div><div class="mm-sub">${m.sub}</div></div>
+      <button class="chat-close" onclick="document.getElementById('modModal').classList.remove('open')">✕</button>
     </div>
-    ${m.steps.map(s=>`<div class="mod-step" style="border-color:${ag.color}15"><div class="ms-num" style="color:${ag.color}">${s.n}</div><div><div class="ms-title">${s.t}</div><div class="ms-desc">${s.d}</div></div></div>`).join('')}
-    <div class="mod-alert">${m.alert}</div>
-    <button class="mod-voice-btn" onclick="speak('Protocolo ${m.ttl.replace(/'/g,"\\'")} activado. ${m.steps[0].t}: ${m.steps[0].d.replace(/'/g,"\\'")}','${m.agent}')">🔊 ACTIVAR PROTOCOLO DE VOZ</button>
-  `;
+    ${m.steps.map(s=>`<div class="mm-step" style="border-color:${ag.color}12"><div class="ms-n" style="color:${ag.color}">${s.n}</div><div><div class="ms-t">${s.t}</div><div class="ms-d">${s.d}</div></div></div>`).join('')}
+    <div class="mm-alert">${m.alert}</div>
+    <button class="mm-voice-btn" onclick="speak(${JSON.stringify(voiceText)},'${m.agent}')">🔊 ACTIVAR PROTOCOLO DE VOZ · ${ag.name}</button>
+    <button class="mm-chat-btn" style="border-color:${ag.color}35;background:${ag.color}08;color:${ag.color}" onclick="document.getElementById('modModal').classList.remove('open');openAgentChat('${m.agent}')">💬 HABLAR CON ${ag.name} DIRECTAMENTE</button>`;
 }
 
-// ── UNIT LEGEND ───────────────────────────────────────────
+// ── UNIT LEGEND ────────────────────────────────────────────────
 function renderUnitLegend() {
-  document.getElementById('unitLegend').innerHTML = PATROL_UNITS.map(u=>`
-    <div class="ul-item">
-      <div class="ul-dot" style="background:${u.color};box-shadow:0 0 4px ${u.glow}"></div>
-      <span class="ul-id">${u.id}</span>
-      <span class="ul-label">${u.label}</span>
-      <span class="ul-status" style="color:${u.status==='En escena'?'#00E676':u.status==='Llamado activo'?'#FF1744':'#3A5A7A'}">${u.status}</span>
-    </div>
-  `).join('');
+  document.getElementById('unitLegend').innerHTML = PATROL_UNITS.map(u=>{
+    const sc={'En escena':'#00E676','En camino':'#00E5FF','Disponible':'#C8A84B','Patrullando':'#3A5A7A'}[u.status]||'#3A5A7A';
+    return `<div class="unit-row">
+      <div class="ur-dot" style="background:${u.color};box-shadow:0 0 3px ${u.glow}"></div>
+      <span class="ur-id">${u.id}</span>
+      <span class="ur-label">${u.label}</span>
+      <span class="ur-sector">${u.sector}</span>
+      <span class="ur-status" style="color:${sc}">●</span>
+    </div>`;
+  }).join('');
 }
 
-// ── TABS ─────────────────────────────────────────────────
-function switchTab(name, btn) {
+// ── TABS ────────────────────────────────────────────────────────
+function switchTab(name,btn) {
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
 }
+function goToTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');if(b.getAttribute('onclick')?.includes(name))b.classList.add('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+}
 
-// ── REPORT FORM ───────────────────────────────────────────
-function onTypeChange() {
-  const tipo = document.getElementById('rtype').value;
+// ── REPORT FORM ────────────────────────────────────────────────
+function onTipoChange() {
+  const tipo = document.getElementById('rTipo').value;
   const col = document.getElementById('protocolSteps');
-  if (!tipo) { col.innerHTML = '<span style="color:#2A4A6A;font-family:\'Share Tech Mono\',monospace;font-size:9px">Selecciona un tipo de incidente</span>'; return; }
-  const steps = ['Mantén la calma','Aléjate del área peligrosa','Espera en lugar seguro','El folio te identifica','La unidad está en camino'];
+  if (!tipo) { col.innerHTML='<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1A3A5A">Selecciona un tipo</span>'; return; }
+  const protocols = {
+    'Robo / Asalto':['Mantén la calma','Aléjate del área','Espera en lugar seguro','Describe al presunto','Unidad en camino'],
+    'Violencia familiar':['Sal del domicilio','Busca lugar seguro','KATERING coordina','Identidad protegida','IMM Temixco activado'],
+    'Narcomenudeo CJNG':['Sin exposición','Reporta desde seguro','No publiques en redes','Anonimato garantizado','Maximiliano en análisis'],
+    'Extorsión / Gota a Gota':['No pagues más','Documenta evidencia','Sin confrontación','Folio a FGR','Marina en coordinación'],
+    'Disparos activos':['Cúbrete inmediatamente','Aléjate de ventanas','Llama al 911','Emiliano coordina','GN y SSPC notificados'],
+    'Desaparición':['Actúa de inmediato','Reúne datos y foto','DIF y FGE notificados','SANTI genera ficha','No esperes 24 horas'],
+    'Vehículo sospechoso':['Anota placa y descripción','No te expongas','Maximiliano analiza C2','Unidad más cercana','Alerta en sector'],
+    'Seguridad escolar':['Reporta con calma','Santiago activa protocolo','Director notificado','Unidad en perímetro','Trabajo Social activado'],
+    'Homicidio / Ejecución':['No toques la escena','Aléjate del área','SSPC y FGE notificados','Emiliano coordina','Peritos en camino'],
+  };
+  const steps = protocols[tipo]||['Mantén la calma','Reporta desde seguro','Unidad en camino','Folio generado','Análisis activo'];
   col.innerHTML = steps.map((s,i)=>`<div class="protocol-step"><span class="ps-num">0${i+1}</span><span class="ps-txt">${s}</span></div>`).join('');
-  const unitId = getUnitForType(tipo);
-  document.getElementById('unitByType').innerHTML = `<div style="color:#00E676;font-family:'Share Tech Mono',monospace;font-size:9px;margin-bottom:4px;animation:fade-up .3s ease">→ ${unitId} asignada a este tipo</div><div style="color:#2A4A6A;font-family:'Share Tech Mono',monospace;font-size:9px"><div><span style="color:#1565C0">U-01/03</span> — Municipal</div><div><span style="color:#C8A84B">U-07</span> — SSPC Morelos</div><div><span style="color:#2E7D32">U-11</span> — G. Nacional</div><div><span style="color:#0D47A1">U-14</span> — Marina</div></div>`;
+  const unitId = getUnit(tipo);
+  document.getElementById('unitInfo').innerHTML = `<div style="color:#00E676;font-size:9px;margin-bottom:4px;animation:fade-up .3s ease">→ ${unitId} asignada a este tipo</div><div><span style="color:#1565C0">U-01→06</span> · Municipal</div><div><span style="color:#C8A84B">U-07→09</span> · SSPC Morelos</div><div><span style="color:#2E7D32">U-10→11</span> · G. Nacional</div><div><span style="color:#0D47A1">U-12→13</span> · Marina</div><div><span style="color:#757575">U-14</span> · FGE · <span style="color:#880E4F">U-15</span> · AVG</div>`;
 }
 
 async function sendReport() {
-  const tipo = document.getElementById('rtype').value;
+  const tipo = document.getElementById('rTipo').value;
   if (!tipo) { alert('Selecciona el tipo de incidente.'); return; }
-  initAudio(); playNewReport();
+  initAudio(); sfxReport();
 
   const folio = genFolio(tipo);
-  const agentId = typeAgent(tipo);
+  const agentId = getAgentForType(tipo);
   const cuadrante = document.getElementById('rCuadrante').value || 'CENTRO';
-  const denunciante = document.getElementById('rDenunciante').value || 'S/D';
-  const desc = document.getElementById('rdesc').value;
-  const unitId = getUnitForType(tipo);
+  const reportante = document.getElementById('rReportante').value || 'ANÓNIMO';
+  const telefono = document.getElementById('rTelefono').value || 'S/D';
+  const desc = document.getElementById('rDesc').value;
+  const unitId = getUnit(tipo);
+  const operador = currentUser.name;
+  const horaEntrada = nowStr();
   const lat = 18.8405+(Math.random()-.5)*.018;
   const lng = -99.2328+(Math.random()-.5)*.022;
-  const tm = nowStr();
   const ag = AGENTS[agentId];
-  const colorMap = {'Robo / Asalto':'#FF6D00','Violencia familiar':'#C13AFF','Narcomenudeo CJNG':'#FF1744','Extorsión / Gota a Gota':'#FF6D00','Disparos activos':'#FF1744','Desaparición':'#9C27B0','Vehículo sospechoso':'#00E5FF','Seguridad escolar':'#00E5FF','Homicidio / Ejecución':'#FF1744'};
-  const color = colorMap[tipo]||'#C8A84B';
+  const colores = {'Robo / Asalto':'#FF6D00','Violencia familiar':'#C13AFF','Narcomenudeo CJNG':'#FF1744','Extorsión / Gota a Gota':'#FF6D00','Disparos activos':'#FF1744','Desaparición':'#9C27B0','Vehículo sospechoso':'#00E5FF','Seguridad escolar':'#00E5FF','Homicidio / Ejecución':'#FF1744'};
+  const color = colores[tipo]||'#C8A84B';
 
-  // Store current folio data
-  currentFolio = {folio,tipo,agente:agentId,denunciante,cuadrante,horaEntrada:tm,unitAsigned:unitId,lat,lng};
-  traceEntries = [{time:tm,event:`${folio} · FOLIO GENERADO · ${ag.name} asignado`},{time:tm,event:`${unitId} · NOTIFICADA · En camino`}];
-  folioList.unshift(currentFolio);
+  currentFolio = {folio,tipo,agentId,reportante,telefono,cuadrante,horaEntrada,horaArribo:'Pendiente',horaRetiro:'—',estatus:'ABIERTO',operador,unitId,lat,lng,desc};
+  traceEvents = [{time:horaEntrada,event:`FOLIO GENERADO · ${folio}`},{time:horaEntrada,event:`OPERADOR: ${operador} · TIPO: ${tipo}`},{time:horaEntrada,event:`${unitId} (${ag.name}) NOTIFICADA`}];
+  folioRegistry.unshift(currentFolio);
 
-  // Update UI
-  reportCount++; alertCount = (tipo==='Disparos activos'||tipo==='Homicidio / Ejecución'||tipo==='Narcomenudeo CJNG') ? alertCount+1 : alertCount;
-  document.getElementById('hdrReports').textContent = reportCount;
+  reportCount++;
+  document.getElementById('hReports').textContent = reportCount;
   document.getElementById('scReports').textContent = reportCount;
-  document.getElementById('hdrAlerts').textContent = alertCount;
-  document.getElementById('scAlerts').textContent = alertCount;
 
-  addActivity(color, `${folio} · ${tipo} · ${ag.name} · ${unitId} despachada`);
+  addActivity(color,`${folio} · ${tipo} · ${ag.emoji} ${ag.name} · ${unitId} despachada`);
   updateFolioList();
-  updateTraceUI(unitId, 'NOTIFICADA');
+  updateTraceUI(unitId,'NOTIFICADA');
   updateTraceData();
+  updateEscapeRoutes(tipo,cuadrante);
 
-  // Map marker
   if (map) {
-    L.circle([lat,lng],{color,fillColor:color,fillOpacity:.15,opacity:.55,weight:2,radius:120}).addTo(map).bindPopup(`<b style="color:${color}">${folio}</b><br>${tipo}<br><small>${tm}</small>`).openPopup();
+    const circle = L.circle([lat,lng],{color,fillColor:color,fillOpacity:.14,opacity:.5,weight:2,radius:130}).addTo(map).bindPopup(`<b style="color:${color}">${folio}</b><br>${tipo}<br><small>Entrada: ${horaEntrada}</small>`).openPopup();
     map.setView([lat,lng],15,{animate:true});
   }
 
-  // Voice feedback
-  speak(`${ag.name} procesando folio ${folio}. ${tipo} en ${cuadrante}. Análisis neuronal Gemini activado.`, agentId);
-  switchTabByName('analysis');
-  document.getElementById('reportBtn').disabled = true;
-  document.getElementById('reportBtn').textContent = '⚡ ANALIZANDO CON GEMINI IA...';
+  speak(`${ag.name} procesando folio ${folio}. ${tipo} en sector ${cuadrante}. Análisis neuronal Gemini activado. Hora de entrada: ${horaEntrada}.`, agentId, true);
+  goToTab('analysis');
+  document.getElementById('rBtn').disabled=true;
+  document.getElementById('rBtn').textContent='⚡ ANALIZANDO CON GEMINI...';
 
-  // Gemini analysis
   let analysis = null;
   if (GEMINI_KEY) {
-    const prompt = `Incidente en Temixco, Morelos:
-FOLIO: ${folio}
-TIPO: ${tipo}
-SECTOR: ${cuadrante}
-DESCRIPCIÓN: ${desc||'Sin descripción adicional'}
-AGENTE: ${agentId.toUpperCase()}
-
-Genera análisis táctico con datos reales de Temixco 2025. Responde SOLO en JSON con esta estructura exacta:
-{"agente":"${agentId}","analisis":"texto","nivelRiesgo":"CRÍTICO|ALTO|MEDIO|BAJO","accionesRecomendadas":["acción 1","acción 2","acción 3"],"unidadesRequeridas":1,"protocolo":"nombre","coordinacion":"texto"}`;
-
-    const SANTI_SYSTEM = `Eres SANTI, Sistema de Análisis Neuronal Táctico. Contexto: CJNG El Trébol activa en Bugambilias/El Mirador de Temixco. 93 cámaras WiFi ilegales CJNG desmanteladas 2025. 24 detenidos por extorsión. AVG activa 10+ años. 10 feminicidios 2024. Responde SOLO en JSON válido.`;
-    const raw = await callGemini(SANTI_SYSTEM, prompt, true);
-    if (raw) try { analysis = JSON.parse(raw); } catch(e){}
+    const sys = `Eres SANTI, sistema de análisis táctico. Contexto Temixco 2025: CJNG El Trébol en Bugambilias/El Mirador, 93 cámaras WiFi ilegales desmontadas, 24 detenidos extorsión, AVG activa 10+ años, 10 feminicidios 2024. Responde SOLO JSON válido, sin markdown.`;
+    const prm = `FOLIO: ${folio}\nTIPO: ${tipo}\nSECTOR: ${cuadrante}\nREPORTANTE: ${reportante}\nDESCRIPCIÓN: ${desc||'Sin descripción'}\n\nJSON esperado:\n{"agente":"${agentId}","analisis":"texto","nivelRiesgo":"CRÍTICO|ALTO|MEDIO|BAJO","accionesRecomendadas":["a1","a2","a3"],"unidadesRequeridas":1,"protocolo":"nombre","coordinacion":"texto","rutasEscape":["ruta1","ruta2"]}`;
+    const raw = await callGemini(sys,prm,true);
+    if (raw) try { analysis=JSON.parse(raw); } catch(e){}
   }
 
   if (!analysis) {
-    const levelMap = {'Narcomenudeo CJNG':'CRÍTICO','Homicidio / Ejecución':'CRÍTICO','Disparos activos':'ALTO','Extorsión / Gota a Gota':'ALTO','Desaparición':'ALTO','Violencia familiar':'MEDIO','Robo / Asalto':'MEDIO','Seguridad escolar':'BAJO','Vehículo sospechoso':'BAJO'};
-    analysis = {
-      agente: agentId, nivelRiesgo: levelMap[tipo]||'MEDIO',
-      analisis: `Análisis neuronal SANTI para ${tipo} en ${cuadrante}. Datos de Temixco 2025 indican zona de riesgo ${levelMap[tipo]||'MEDIO'}. Protocolo ${tipo} activado según los patrones delictivos registrados.`,
-      accionesRecomendadas: [`Unidad ${unitId} despachada al sector ${cuadrante}`, `Notificación a ${getFolioPrefix(tipo)}`, 'Documentar evidencia y testigos'],
-      unidadesRequeridas: tipo.includes('CJNG')||tipo.includes('Ejecución')?3:1,
-      protocolo: tipo, coordinacion: `Coordinación ${getFolioPrefix(tipo)} + SSPC Morelos activada`,
-    };
+    const lvl = {'Narcomenudeo CJNG':'CRÍTICO','Homicidio / Ejecución':'CRÍTICO','Disparos activos':'ALTO','Extorsión / Gota a Gota':'ALTO','Desaparición':'ALTO','Violencia familiar':'MEDIO','Robo / Asalto':'MEDIO','Seguridad escolar':'BAJO','Vehículo sospechoso':'BAJO'}[tipo]||'MEDIO';
+    analysis = {agente:agentId,nivelRiesgo:lvl,analisis:`Análisis SANTI NEXUS: ${tipo} en sector ${cuadrante} de Temixco. Nivel ${lvl} basado en patrones registrados 2025. ${ag.name} coordina respuesta táctica con unidad ${unitId}.`,accionesRecomendadas:[`${unitId} despachada al sector ${cuadrante}`,`Notificación a ${folio.split('-')[0]} Temixco`,`${ag.name} monitorea en tiempo real`],unidadesRequeridas:tipo.includes('CJNG')||tipo.includes('Ejecución')?3:1,protocolo:tipo,coordinacion:`${folio.split('-')[0]} + SSPC Morelos + ${ag.name} coordinados.`,rutasEscape:['Carr. Federal 95D Norte','Blvd. Juárez Poniente']};
   }
 
   currentAnalysis = analysis;
   renderAnalysis(analysis);
   speak(analysis.analisis, agentId);
-  if (analysis.nivelRiesgo === 'CRÍTICO') { playCritical(); alertCount++; document.getElementById('hdrAlerts').textContent = alertCount; document.getElementById('scAlerts').textContent = alertCount; }
-  addActivity(riskColor(analysis.nivelRiesgo), `GEMINI IA · ${folio} · Riesgo: ${analysis.nivelRiesgo} · ${analysis.protocolo}`);
+  if (analysis.nivelRiesgo==='CRÍTICO') { sfxCritical(); alertCount++; document.getElementById('hAlerts').textContent=alertCount; document.getElementById('scAlerts').textContent=alertCount; }
+  addActivity(riskColor(analysis.nivelRiesgo),`GEMINI IA · ${folio} · Riesgo: ${analysis.nivelRiesgo}`);
+  if (analysis.rutasEscape) updateEscapeRoutes(tipo,cuadrante,analysis.rutasEscape);
 
-  // Animate unit
-  setTimeout(() => {
-    animateUnitToIncident(unitId, lat, lng, folio);
-    updateUnitStatus('EN CAMINO');
-    addTraceEntry(`${unitId} · EN CAMINO`);
-    renderUnitLegend();
-  }, 3000);
+  setTimeout(()=>{ animateUnitToIncident(unitId,lat,lng,folio); },3000);
 
-  document.getElementById('reportBtn').disabled = false;
-  document.getElementById('reportBtn').textContent = '⚡ REGISTRAR REPORTE';
-  document.getElementById('rtype').value=''; document.getElementById('rdesc').value='';
-  document.getElementById('rDenunciante').value=''; document.getElementById('rContacto').value='';
-  document.getElementById('rCuadrante').value=''; document.getElementById('rReportantes').value='1';
+  document.getElementById('rBtn').disabled=false;
+  document.getElementById('rBtn').textContent='⚡ REGISTRAR REPORTE';
+  ['rTipo','rCuadrante','rDesc','rReportante','rTelefono'].forEach(id=>{
+    const el=document.getElementById(id); if(el){el.value='';el.tagName==='SELECT'&&(el.value='');}
+  });
+  document.getElementById('rNum').value='1';
 }
 
-function getFolioPrefix(tipo) {
-  const m={'Narcomenudeo CJNG':'FGR','Extorsión / Gota a Gota':'FGR','Homicidio / Ejecución':'SSPC','Disparos activos':'SSPC','Desaparición':'FGE'};
-  return m[tipo]||'MUN-TMX';
-}
-
-// ── RENDER HELPERS ────────────────────────────────────────
+// ── ANALYSIS RENDER ────────────────────────────────────────────
 function renderAnalysis(a) {
-  const ag = AGENTS[a.agente]||AGENTS.santi;
-  document.getElementById('analysisContent').innerHTML = `
-    <div style="animation:fade-up .4s ease;width:100%">
-      <div class="an-header">
-        <div class="an-folio">${currentFolio?.folio}</div>
-        <div class="an-risk" style="background:${riskColor(a.nivelRiesgo)}18;border:1px solid ${riskColor(a.nivelRiesgo)}40;color:${riskColor(a.nivelRiesgo)}">RIESGO: ${a.nivelRiesgo}</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#6A90B8">${a.protocolo}</div>
-        <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:8px;color:${ag.color}">${ag.emoji} ${ag.name}</div>
+  const ag=AGENTS[a.agente]||AGENTS.santi;
+  document.getElementById('analysisContent').innerHTML=`<div style="animation:fade-up .4s ease;width:100%">
+    <div class="an-hdr">
+      <div class="an-folio">${currentFolio?.folio}</div>
+      <div class="an-risk" style="background:${riskColor(a.nivelRiesgo)}14;border:1px solid ${riskColor(a.nivelRiesgo)}38;color:${riskColor(a.nivelRiesgo)}">RIESGO: ${a.nivelRiesgo}</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#6A90B8">${a.protocolo}</div>
+      <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:8px;color:${ag.color}">${ag.emoji} ${ag.name}</div>
+    </div>
+    <div class="an-grid">
+      <div>
+        <div class="an-label">ANÁLISIS EJECUTIVO · GEMINI 2.5</div>
+        <div class="an-text">${a.analisis}</div>
+        <div class="an-label">COORDINACIÓN INTER-INSTITUCIONAL</div>
+        <div class="an-text">${a.coordinacion}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:7px;color:#3A5A7A">Unidades requeridas: <span style="color:#00E5FF;font-weight:700">${a.unidadesRequeridas}</span></div>
       </div>
-      <div class="an-body">
-        <div>
-          <div class="an-label">ANÁLISIS EJECUTIVO · GEMINI 2.5</div>
-          <div class="an-text">${a.analisis}</div>
-          <div class="an-label">COORDINACIÓN INSTITUCIONAL</div>
-          <div class="an-text">${a.coordinacion}</div>
-          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#3A5A7A;margin-top:4px">Unidades requeridas: <span style="color:#00E5FF;font-weight:700">${a.unidadesRequeridas}</span></div>
-        </div>
-        <div>
-          <div class="an-label">ACCIONES RECOMENDADAS</div>
-          ${(a.accionesRecomendadas||[]).map((ac,i)=>`<div class="an-action"><span class="an-num">0${i+1}</span><span class="an-act">${ac}</span></div>`).join('')}
-        </div>
+      <div>
+        <div class="an-label">ACCIONES RECOMENDADAS</div>
+        ${(a.accionesRecomendadas||[]).map((ac,i)=>`<div class="an-action"><span class="an-num">0${i+1}</span><span class="an-act">${ac}</span></div>`).join('')}
       </div>
-    </div>`;
+    </div>
+  </div>`;
 }
 
+// ── TRACE ──────────────────────────────────────────────────────
 function updateTraceUI(unitId, status) {
-  const u = PATROL_UNITS.find(x=>x.id===unitId);
-  const colors = {'EN ESCENA':'rgba(0,230,118,.12)','EN CAMINO':'rgba(0,229,255,.1)','NOTIFICADA':'rgba(200,168,75,.08)','CASO CERRADO':'rgba(0,230,118,.08)'};
-  const borderColors = {'EN ESCENA':'rgba(0,230,118,.3)','EN CAMINO':'rgba(0,229,255,.25)','NOTIFICADA':'rgba(200,168,75,.2)','CASO CERRADO':'rgba(0,230,118,.2)'};
-  const textColors = {'EN ESCENA':'#00E676','EN CAMINO':'#00E5FF','NOTIFICADA':'#C8A84B','CASO CERRADO':'#00E676'};
-  document.getElementById('traceUnit').innerHTML = `
-    <div class="trace-unit">
-      <div class="trace-id" style="color:${u?.glow||'#C8A84B'}">${unitId}</div>
-      <div style="font-size:10px;color:#6A90B8">${u?.label||'UNIDAD'}</div>
-      <div class="trace-status" style="background:${colors[status]||colors.NOTIFICADA};border:1px solid ${borderColors[status]||borderColors.NOTIFICADA};color:${textColors[status]||textColors.NOTIFICADA}">${status}</div>
-    </div>`;
+  const u=PATROL_UNITS.find(x=>x.id===unitId)||{id:unitId,label:'UNIDAD',glow:'#C8A84B'};
+  const sColors={'EN ESCENA':'rgba(0,230,118,.12)','EN CAMINO':'rgba(0,229,255,.1)','NOTIFICADA':'rgba(200,168,75,.08)','DISPONIBLE':'rgba(200,168,75,.06)','CASO CERRADO':'rgba(0,230,118,.07)'};
+  const sTxt={'EN ESCENA':'#00E676','EN CAMINO':'#00E5FF','NOTIFICADA':'#C8A84B','DISPONIBLE':'#C8A84B','CASO CERRADO':'#00E676'};
+  document.getElementById('traceUnit').innerHTML=`<div class="trace-unit-card"><div class="tu-id" style="color:${u.glow}">${unitId}</div><div class="tu-label">${u.label||'UNIDAD'}</div><div class="tu-status" style="background:${sColors[status]||sColors.NOTIFICADA};border:1px solid ${sTxt[status]||sTxt.NOTIFICADA}40;color:${sTxt[status]||sTxt.NOTIFICADA}">${status}</div></div>`;
 }
-function updateUnitStatus(status) { if (currentFolio) updateTraceUI(currentFolio.unitAsigned, status); }
 
-function addTraceEntry(event) {
-  traceEntries.push({time:nowStr(),event});
-  const el = document.getElementById('traceLog');
-  el.innerHTML = traceEntries.map(t=>`<div class="trace-entry"><span class="trace-time">${t.time}</span><div class="trace-bar"></div><span class="trace-ev">${t.event}</span></div>`).join('');
+function addTrace(event) {
+  traceEvents.push({time:nowStr(),event});
+  document.getElementById('traceTimeline').innerHTML = traceEvents.map(e=>`<div class="timeline-event"><span class="te-time">${e.time}</span>${e.event}</div>`).join('');
+  document.getElementById('traceTimeline').scrollTop = 9999;
 }
 
 function updateTraceData() {
   if (!currentFolio) return;
-  const ag = AGENTS[currentFolio.agente];
-  document.getElementById('traceData').innerHTML = [
-    ['Folio',currentFolio.folio], ['Tipo',currentFolio.tipo], ['Denunciante',currentFolio.denunciante],
-    ['Cuadrante',currentFolio.cuadrante], ['Hora entrada',currentFolio.horaEntrada],
-    ['Agente IA',ag.name], ['Unidad',currentFolio.unitAsigned],
-  ].map(([l,v])=>`<div class="data-row"><span class="data-label">${l}</span><span class="data-val">${v}</span></div>`).join('');
+  const ag=AGENTS[currentFolio.agentId];
+  const rows=[['Folio',currentFolio.folio],['Tipo',currentFolio.tipo],['Reportante',currentFolio.reportante],['Teléfono',currentFolio.telefono],['Sector',currentFolio.cuadrante],['Hora entrada',currentFolio.horaEntrada],['Hora arribo',currentFolio.horaArribo||'Pendiente'],['Hora retiro',currentFolio.horaRetiro||'—'],['Operador',currentFolio.operador],['Agente IA',ag.name],['Unidad',currentFolio.unitId],['Estatus',currentFolio.estatus||'ABIERTO']];
+  document.getElementById('traceData').innerHTML=rows.map(([l,v])=>`<div class="data-kv"><span class="dk-label">${l}</span><span class="dk-val" style="${l==='Estatus'?`color:${v==='ABIERTO'?'#FF6D00':v==='EN SEGUIMIENTO'?'#00E5FF':'#00E676'};font-weight:800`:''}">${v}</span></div>`).join('');
 }
 
+function updateEscapeRoutes(tipo, sector, routes) {
+  const defaults = {
+    'BUGAMBILIAS':['Carr. 95D hacia norte · 3.2km','Blvd. Juárez salida poniente · 1.8km'],
+    'EL MIRADOR':['Carr. 95D entrada Cuernavaca · 4km','Periférico Norte descarga · 2.1km'],
+    'ACATLIPA':['Blvd. Juárez salida · 2.4km','Carr. México-Acapulco · 3.8km'],
+    'CENTRO':['Periférico Norte · 1.5km','Carr. Federal 95 · 2.2km'],
+  };
+  const r = routes || defaults[sector] || ['Carr. Federal 95D · Acceso principal','Blvd. Juárez · Salida Poniente'];
+  document.getElementById('escapeRoutes').innerHTML = r.map((rt,i)=>`<div style="color:#FF6D00;font-weight:600">⚠ Ruta ${i+1}: ${rt}</div>`).join('');
+}
+
+// ── FOLIO LIST ─────────────────────────────────────────────────
 function updateFolioList() {
-  const el = document.getElementById('folioList');
-  document.getElementById('folioCount').textContent = folioList.length;
-  el.innerHTML = folioList.map((f,i)=>{
-    const ag = AGENTS[f.agente];
-    return `<div class="folio-item" style="animation-delay:${i*.04}s" onclick="viewFolio(${i})">
-      <div class="folio-tag" style="color:${ag.color}"><span style="width:5px;height:5px;border-radius:50%;background:${ag.color};display:inline-block;margin-right:5px"></span>${f.folio}</div>
-      <div class="folio-tipo">${f.tipo}</div>
-      <div class="folio-meta"><span>${f.horaEntrada}</span><span>${f.cuadrante}</span><span style="color:${ag.color}">${f.unitAsigned}</span></div>
+  const el=document.getElementById('folioListEl');
+  document.getElementById('folioCount').textContent=folioRegistry.length;
+  if (!folioRegistry.length) { el.innerHTML='<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1A3A5A;text-align:center;margin-top:14px">Sin folios registrados</div>'; return; }
+  el.innerHTML=folioRegistry.map((f,i)=>{
+    const ag=AGENTS[f.agentId];
+    const sc={'ABIERTO':'#FF6D00','EN SEGUIMIENTO':'#00E5FF','CERRADO':'#00E676','CANALIZADO':'#9C27B0'}[f.estatus]||'#C8A84B';
+    return `<div class="folio-item" onclick="viewFolio(${i})">
+      <div class="fi-tag" style="color:${ag.color}">${f.folio}</div>
+      <div class="fi-tipo">${f.tipo}</div>
+      <div class="fi-meta">
+        <span>${f.horaEntrada}</span><span>${f.cuadrante}</span><span style="color:${ag.color}">${f.unitId}</span>
+        <span class="fi-status" style="background:${sc}18;border:1px solid ${sc}35;color:${sc}">${f.estatus||'ABIERTO'}</span>
+      </div>
     </div>`;
   }).join('');
 }
 
 function viewFolio(i) {
-  currentFolio = folioList[i];
+  currentFolio=folioRegistry[i];
   updateTraceData();
-  updateTraceUI(currentFolio.unitAsigned, 'EN ESCENA');
-  switchTabByName('trace');
+  updateTraceUI(currentFolio.unitId,'EN ESCENA');
+  const u=PATROL_UNITS.find(x=>x.id===currentFolio.unitId);
+  if (u) addTrace(`${currentFolio.unitId} · REVISADO · ${nowStr()}`);
+  goToTab('trace');
 }
 
-function switchTabByName(name) {
-  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  document.querySelectorAll('.tab-btn').forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(name))b.classList.add('active');});
-}
-
+// ── ACTIVITY LOG ───────────────────────────────────────────────
+let actLog = [
+  {time:'14:23',color:'#00E676',msg:'U-03 · Patrullaje Bugambilias · Sin novedad'},
+  {time:'14:21',color:'#FF6D00',msg:'MUN-TMX-2026-0041 · Robo transeúnte · Blvd. Juárez'},
+  {time:'14:18',color:'#FF1744',msg:'ALERTA · Vehículo reportado · Carr. 95 · U-07 notificada'},
+  {time:'14:15',color:'#00E5FF',msg:'C2-04 · Placa ABC-1234 · Periférico Norte · IA activa'},
+];
 function addActivity(color, msg) {
-  const tm = nowStr();
-  activityLog.unshift({time:tm,color,msg});
-  if (activityLog.length>20) activityLog.pop();
-  renderActivity();
+  actLog.unshift({time:nowStr(),color,msg});
+  if (actLog.length>25) actLog.pop();
+  document.getElementById('activityFeed').innerHTML=actLog.map(a=>`<div class="log-entry"><span class="log-time">${a.time}</span><div class="log-dot" style="background:${a.color};box-shadow:0 0 4px ${a.color}"></div><span class="log-msg">${a.msg}</span></div>`).join('');
 }
 
-function renderActivity() {
-  document.getElementById('activityFeed').innerHTML = activityLog.map(a=>`
-    <div class="log-entry">
-      <span class="log-time">${a.time}</span>
-      <div class="log-dot" style="background:${a.color};box-shadow:0 0 4px ${a.color}"></div>
-      <span class="log-msg">${a.msg}</span>
+// ── OSINT FEED ─────────────────────────────────────────────────
+function renderOsint() {
+  const rColors={CRÍTICO:'#FF1744',ALTO:'#FF6D00',MEDIO:'#FFD166',INFO:'#00E5FF'};
+  document.getElementById('osintList').innerHTML=OSINT_BASE.map(o=>`
+    <div class="osint-item" style="border-left-color:${rColors[o.risk]||'#C8A84B'};animation-delay:.05s" onclick="if(map)map.setView([${o.lat},${o.lng}],15,{animate:true})">
+      <div class="oi-source"><span>${o.ico}</span><span>${o.src}</span><span style="font-family:'Orbitron',monospace;font-size:6px;color:#1A3A5A">${o.t}</span><span class="oi-risk" style="background:${rColors[o.risk]||'#C8A84B'}12;color:${rColors[o.risk]||'#C8A84B'};border:1px solid ${rColors[o.risk]||'#C8A84B'}25">${o.risk}</span></div>
+      <div class="oi-text">${o.txt.length>70?o.txt.slice(0,70)+'...':o.txt}</div>
     </div>`).join('');
 }
 
-// ── SECRETARY ALERT ───────────────────────────────────────
-function secretaryAlert() {
-  initAudio(); playCritical();
-  addActivity('#FF1744', `🚨 ALERTA MÁXIMA · Secretario notificado 777-329-0000 · TODAS LAS UNIDADES`);
-  alertCount++;
-  document.getElementById('hdrAlerts').textContent = alertCount;
-  document.getElementById('scAlerts').textContent = alertCount;
-  speak('ALERTA MÁXIMA activada. Canal directo con el Secretario de Seguridad abierto. Todas las unidades en estado de alerta máxima. Protocolo de respuesta extraordinaria activado en todos los sectores de Temixco.','santi');
-}
-
-// ── VEHICLE SCAN ──────────────────────────────────────────
+// ── VEHICLE SCAN ───────────────────────────────────────────────
 function runScan() {
-  const pl = document.getElementById('scanPlate').value.trim().toUpperCase();
-  if (!pl) { alert('Ingresa una placa.'); return; }
+  const pl=document.getElementById('scanInp').value.trim().toUpperCase();
+  if (!pl) return;
   initAudio();
-  const hits = Math.floor(Math.random()*6)+1;
-  const tipos = ['Extorsión · Gota a Gota','Narcomenudeo','Robo a transeúnte','Cobro de piso','Portación de arma'];
-  const zonas = ['Blvd. Juárez esq. Carr. 95','Periférico Norte','Col. Bugambilias','Acatlipa Centro'];
-  const tipo = tipos[Math.floor(Math.random()*tipos.length)];
-  const zona = zonas[Math.floor(Math.random()*zonas.length)];
-  document.getElementById('scanResult').innerHTML = `<div class="scan-result"><div class="scan-plate">${pl}</div><div class="scan-data"><div>Reportes: <span style="color:#FF1744;font-weight:700">${hits}</span></div><div>Tipo: ${tipo}</div><div>Últ. ubicación: ${zona}</div><div style="color:#00E5FF;margin-top:3px">C2 VERIFICADO · IA MEJORADA · 94%</div></div></div>`;
-  addActivity('#00E5FF', `C2 · Placa ${pl} · ${hits} reportes · ${zona} · IA mejorada`);
-  speak(`Sistema C2 identificó vehículo placa ${pl} con ${hits} reportes previos. Categoría: ${tipo}. Última ubicación: ${zona}. Unidad 07 notificada.`,'maxi');
+  const hits=Math.floor(Math.random()*6)+1;
+  const tipos=['Extorsión · Gota a Gota','Narcomenudeo CJNG','Robo a transeúnte','Cobro de piso','Portación de arma'];
+  const zonas=['Blvd. Juárez / Carr. 95','Periférico Norte','Col. Bugambilias','Acatlipa Centro'];
+  const tipo=tipos[Math.floor(Math.random()*tipos.length)];
+  const zona=zonas[Math.floor(Math.random()*zonas.length)];
+  document.getElementById('scanResult').innerHTML=`<div class="scan-result"><div class="scan-plate">${pl}</div><div class="scan-data"><div>Reportes: <span style="color:#FF1744;font-weight:700">${hits}</span></div><div>Tipo: ${tipo}</div><div>Últ. ubicación: ${zona}</div><div style="color:#00E5FF;margin-top:2px">C2 VERIFICADO · IA MEJORADA · 94% CONF.</div><div style="color:#FF6D00;margin-top:1px">→ Informe enviado a todas las dependencias</div></div></div>`;
+  addActivity('#00E5FF',`C2 · Placa ${pl} · ${hits} registros · ${zona}`);
+  speak(`Sistema C2 identificó vehículo placa ${pl} con ${hits} reportes. Tipo: ${tipo}. Última ubicación: ${zona}. Informe enviado a todas las dependencias.`,'maxi',true);
   if (map) {
     const la=18.8405+(Math.random()-.5)*.018, ln=-99.2328+(Math.random()-.5)*.022;
-    L.marker([la,ln],{icon:L.divIcon({html:`<div style="background:#FF1744;color:#fff;font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 9px;border-radius:4px;white-space:nowrap;box-shadow:0 0 14px #FF1744;letter-spacing:1px">${pl}</div>`,className:'',iconSize:[100,20]})}).addTo(map).bindPopup(`<b>${pl}</b><br>${tipo}<br>${hits} reportes C2`).openPopup();
+    L.marker([la,ln],{icon:L.divIcon({html:`<div style="background:#FF1744;color:#fff;font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 0 12px #FF1744;letter-spacing:1px">${pl}</div>`,className:'',iconSize:[100,18]})}).addTo(map).bindPopup(`<b>${pl}</b><br>${tipo}<br>${hits} registros C2`).openPopup();
     map.setView([la,ln],15,{animate:true});
   }
 }
 
-// ── ACTIVITY FEED (auto) ──────────────────────────────────
-const autoFeeds=[
-  {c:'#00E676',m:'U-01 · Patrullaje Periférico Norte · Sin novedad'},
-  {c:'#00E5FF',m:'C2-04 · Vehículo en tránsito registrado · Carr. 95D'},
-  {c:'#FF6D00',m:'Ciudadano · El Mirador · Reporte en proceso · SANTI IA'},
-  {c:'#00E676',m:'U-11 · GN · Bugambilias · Ronda completada · Sin novedad'},
-  {c:'#FF1744',m:'ALERTA CLUSTER · 3 reportes · Acatlipa · Últimas 2h'},
-  {c:'#9C27B0',m:'Maximiliano · Análisis C2 · Patrón detectado · Sector Sur'},
-  {c:'#00897B',m:'Santiago · Secundaria #3 · Perímetro OK · Horario escolar'},
-  {c:'#E91E8C',m:'KATERING · Alerta AVG · IMM Temixco notificada · Folio activo'},
-];
-let autoIdx=0;
-setInterval(()=>{ const f=autoFeeds[autoIdx++%autoFeeds.length]; addActivity(f.c,f.m); },12000);
+// ── SECRETARY ALERT ────────────────────────────────────────────
+function secretaryAlert() {
+  initAudio(); sfxCritical();
+  addActivity('#FF1744','🚨 ALERTA MÁXIMA · Secretario 564-096-7363 · Supervisor 662-351-9171 · TODAS LAS UNIDADES');
+  alertCount++;
+  document.getElementById('hAlerts').textContent=alertCount;
+  document.getElementById('scAlerts').textContent=alertCount;
+  speak('ALERTA MÁXIMA activada. Canal directo con el Secretario de Seguridad: 564-096-7363. Supervisor notificado: 662-351-9171. Todas las unidades en estado de alerta máxima. Protocolo extraordinario activado en todos los sectores de Temixco.','santi',true);
+}
 
-// ── API KEY MODAL ─────────────────────────────────────────
-function activateWithKey() {
-  const k = document.getElementById('apikeyInput').value.trim();
-  if (!k) { alert('Por favor ingresa tu API key de Gemini.'); return; }
-  GEMINI_KEY = k;
-  document.getElementById('apikeyModal').style.display = 'none';
-  speak('Sistema SANTI activado con Inteligencia Artificial Gemini 2.5 Flash. Todos los agentes ahora tienen inteligencia neuronal completa. Centro de Mando Operativo de Temixco listo.','santi');
-  addActivity('#C8A84B','⚡ GEMINI 2.5 FLASH ACTIVADO · Inteligencia neuronal completa · Todos los agentes en línea');
+function callSecretary(num) {
+  speak(`Abriendo canal directo con el Secretario de Seguridad. Número ${num}.`,'santi',true);
+  addActivity('#FF1744',`📞 Canal directo activado · ${num} · Secretario de Seguridad`);
+}
+
+// ── FLOWS ──────────────────────────────────────────────────────
+function goToLogin() {
+  document.getElementById('welcomeScreen').style.opacity='0';
+  document.getElementById('welcomeScreen').style.transition='opacity .5s';
+  setTimeout(()=>{
+    document.getElementById('welcomeScreen').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+  },500);
+}
+
+function doLogin() {
+  const dep=document.getElementById('loginDep').value||'mun';
+  const user=document.getElementById('loginUser').value||'OPERADOR';
+  if (!user.trim()) { document.getElementById('loginUser').focus(); return; }
+  const depMap={mun:{emoji:'👮',label:'MUNICIPAL'},sspc:{emoji:'⭐',label:'SSPC MOR.'},gn:{emoji:'🇲🇽',label:'G. NACIONAL'},marina:{emoji:'⚓',label:'MARINA'},fge:{emoji:'⚖',label:'FGE'},fgr:{emoji:'🔒',label:'FGR'},mando:{emoji:'🎖',label:'MANDO'}};
+  const d=depMap[dep]||depMap.mun;
+  currentUser={dep,name:user.toUpperCase().slice(0,12),emoji:d.emoji,label:d.label};
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('hUserName').textContent=currentUser.name;
+  document.getElementById('hUserDep').textContent=d.label;
+  document.getElementById('hUserEmoji').textContent=d.emoji;
+  document.getElementById('rOperador').value=`${d.label} · ${currentUser.name}`;
+  document.getElementById('rEntrada').value=nowStr();
+  document.getElementById('apikeyModal').style.display='flex';
+}
+
+function activateGemini() {
+  const k=document.getElementById('akInput').value.trim();
+  if (!k) { alert('Ingresa tu API key.'); return; }
+  GEMINI_KEY=k;
+  document.getElementById('apikeyModal').style.display='none';
+  document.getElementById('geminiBadge').style.display='flex';
+  document.getElementById('spGem').style.display='inline';
+  launchApp();
+  speak('Sistema SANTI NEXUS activado con inteligencia artificial Gemini 2.5 Flash. Todos los agentes con capacidades neuronales completas. Centro de Mando de Temixco en línea.','santi',true);
+  addActivity('#C8A84B','⚡ GEMINI 2.5 FLASH ACTIVADO · Inteligencia neuronal completa · 5 agentes en línea');
 }
 
 function activateDemo() {
-  document.getElementById('apikeyModal').style.display = 'none';
-  speak('Sistema SANTI inicializado en modo demo. Centro de Mando Operativo de Temixco activo. Todas las unidades en línea.','santi');
+  document.getElementById('apikeyModal').style.display='none';
+  launchApp();
+  speak('Sistema SANTI NEXUS iniciado. Centro de Mando Operativo de Temixco activo. Quince unidades en línea. Agentes listos para coordinación táctica.','santi',true);
 }
 
-// ── INIT ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+function launchApp() {
+  document.getElementById('app').style.display='flex';
+  initAudio();
   renderAgents();
   renderModules();
   renderUnitLegend();
-  renderActivity();
-  initMap();
-  // Init audio on first interaction
-  document.addEventListener('mousedown', ()=>initAudio(), {once:true});
-});
+  renderOsint();
+  addActivity('#C8A84B','Sistema SANTI NEXUS inicializado · 15 unidades desplegadas · Temixco en línea');
+  setTimeout(()=>{
+    map = initMap('map');
+    addPatrolUnits(map);
+    startPatrolMovement();
+    map.on('click',e=>document.getElementById('mapCoords').textContent=`LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`);
+    document.getElementById('rEntrada').value=nowStr();
+  },100);
+}
 
-// Close modals on overlay click
-document.getElementById('modModal').addEventListener('click', e=>{
-  if (e.target===document.getElementById('modModal')) document.getElementById('modModal').classList.remove('open');
-});
-document.getElementById('chatModal').addEventListener('click', e=>{
-  if (e.target===document.getElementById('chatModal')) closeChatModal();
+// ── AUTO FEED ──────────────────────────────────────────────────
+const autoFeeds=[
+  {c:'#00E676',m:'U-10 · GN Norte · Ronda Bugambilias · Sin novedad'},
+  {c:'#00E5FF',m:'C2 · Vehículo en tránsito registrado · Carr. 95D norte'},
+  {c:'#FF6D00',m:'Twitter local · Actividad sospechosa El Mirador · OSINT activo'},
+  {c:'#00E676',m:'U-08 · SSPC · Bugambilias ronda completada · Disponible'},
+  {c:'#FF1744',m:'CLUSTER ACTIVO · 3 reportes Acatlipa · Últimas 2 horas'},
+  {c:'#9C27B0',m:'MAXIMILIANO · Patrón detectado sector sur · Análisis en curso'},
+  {c:'#00897B',m:'SANTIAGO · Secundaria Técnica #3 · Perímetro OK'},
+  {c:'#E91E8C',m:'KATERING · Alerta AVG · IMM Temixco notificada'},
+  {c:'#C8A84B',m:'Estrategia IA: Reforzar NORTE 21:00-23:00 hrs · Patrón CJNG'},
+  {c:'#00E5FF',m:'OSINT · Twitter @TecoSecurity · Actividad actualizada · Procesando'},
+];
+let autoIdx=0;
+setInterval(()=>{ const f=autoFeeds[autoIdx++%autoFeeds.length]; addActivity(f.c,f.m); },13000);
+
+// ── MODALS CLOSE ON OVERLAY ────────────────────────────────────
+document.getElementById('modModal').addEventListener('click',e=>{if(e.target===document.getElementById('modModal'))document.getElementById('modModal').classList.remove('open');});
+document.getElementById('chatModal').addEventListener('click',e=>{if(e.target===document.getElementById('chatModal'))closeChatModal();});
+
+// ── WELCOME VOICE ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('mousedown',()=>initAudio(),{once:true});
+  const msgs=['Inicializando sistema SANTI NEXUS...','Cargando módulos de inteligencia táctica...','15 unidades en proceso de conexión...','Centro de Mando Operativo listo.','Bienvenido a SANTI NEXUS.'];
+  let i=0;
+  const el=document.getElementById('welcomeVoiceText');
+  const show=()=>{if(i<msgs.length){el.textContent=msgs[i];i++;if(i===msgs.length){setTimeout(()=>{initAudio();speak('Bienvenido a SANTI NEXUS. Sistema de Análisis Neuronal Táctico Inteligente. Centro de Mando Operativo de Temixco, Morelos, activado.','santi');},300);}setTimeout(show,900);}};
+  show();
 });
 </script>
 </body>

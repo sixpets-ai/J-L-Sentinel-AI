@@ -13,11 +13,26 @@ export interface PatrolUnit {
 }
 
 export const PATROL_UNITS_CONFIG: Omit<PatrolUnit, "dlat" | "dlng">[] = [
-  { id: "U-01", type: "MUN", label: "MUNICIPAL", color: "#1565C0", glowColor: "#1E88E5", sector: "CENTRO", lat: 18.848, lng: -99.236, status: "Patrullando" },
-  { id: "U-03", type: "MUN", label: "MUNICIPAL", color: "#1565C0", glowColor: "#1E88E5", sector: "ACATLIPA", lat: 18.840, lng: -99.244, status: "En servicio" },
-  { id: "U-07", type: "SSPC", label: "SSPC MOR", color: "#1B1B1B", glowColor: "#C8A84B", sector: "PERIFÉRICO", lat: 18.852, lng: -99.230, status: "Llamado activo" },
-  { id: "U-11", type: "GN", label: "G. NACIONAL", color: "#1B5E20", glowColor: "#4CAF50", sector: "BUGAMBILIAS", lat: 18.835, lng: -99.228, status: "Patrullando" },
-  { id: "U-14", type: "MARINA", label: "MARINA", color: "#0D47A1", glowColor: "#1565C0", sector: "BLVD. JUÁREZ", lat: 18.830, lng: -99.250, status: "Patrullando" },
+  // MUNICIPAL (6 units — highest coverage)
+  { id: "U-01", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "CENTRO",      lat: 18.843, lng: -99.237, status: "Patrullando" },
+  { id: "U-02", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "NORTE",       lat: 18.851, lng: -99.233, status: "Patrullando" },
+  { id: "U-03", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "SUR",         lat: 18.831, lng: -99.234, status: "Patrullando" },
+  { id: "U-04", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "ORIENTE",     lat: 18.844, lng: -99.221, status: "Patrullando" },
+  { id: "U-05", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "PONIENTE",    lat: 18.840, lng: -99.252, status: "Patrullando" },
+  { id: "U-06", type: "MUN",   label: "MUNICIPAL",    color: "#1565C0", glowColor: "#1E88E5", sector: "ACATLIPA",    lat: 18.836, lng: -99.241, status: "En servicio" },
+  // SSPC MORELOS (3 units)
+  { id: "U-07", type: "SSPC",  label: "SSPC MOR.",    color: "#1B1B1B", glowColor: "#C8A84B", sector: "PERIFÉRICO",  lat: 18.852, lng: -99.230, status: "Llamado activo" },
+  { id: "U-08", type: "SSPC",  label: "SSPC MOR.",    color: "#1B1B1B", glowColor: "#C8A84B", sector: "BUGAMBILIAS", lat: 18.848, lng: -99.235, status: "Patrullando" },
+  { id: "U-09", type: "SSPC",  label: "SSPC C2",      color: "#4A148C", glowColor: "#9C27B0", sector: "MIRADOR",     lat: 18.842, lng: -99.228, status: "Patrullando" },
+  // GUARDIA NACIONAL (2 units)
+  { id: "U-10", type: "GN",    label: "G. NACIONAL",  color: "#1B5E20", glowColor: "#4CAF50", sector: "NORTE-GN",    lat: 18.856, lng: -99.238, status: "Patrullando" },
+  { id: "U-11", type: "GN",    label: "G. NACIONAL",  color: "#1B5E20", glowColor: "#4CAF50", sector: "SUR-GN",      lat: 18.825, lng: -99.230, status: "Patrullando" },
+  // MARINA (2 units)
+  { id: "U-12", type: "MARINA", label: "MARINA",      color: "#0D47A1", glowColor: "#1565C0", sector: "BLVD.JUÁREZ", lat: 18.838, lng: -99.255, status: "Patrullando" },
+  { id: "U-13", type: "MARINA", label: "MARINA ENL.", color: "#0D47A1", glowColor: "#1565C0", sector: "ORIENTE",     lat: 18.845, lng: -99.220, status: "Patrullando" },
+  // SPECIAL UNITS
+  { id: "U-14", type: "FGE",   label: "FGE INVEST.",  color: "#212121", glowColor: "#757575", sector: "DINÁMICO",    lat: 18.840, lng: -99.228, status: "Patrullando" },
+  { id: "U-15", type: "SSPC",  label: "CÓD.VIOLETA",  color: "#880E4F", glowColor: "#E91E8C", sector: "NORTE-AVG",   lat: 18.845, lng: -99.240, status: "Patrullando" },
 ];
 
 export function patrolCarSvg(unit: PatrolUnit): string {
