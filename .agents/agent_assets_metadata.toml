@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Zf_nDVHMtVZPqAuS_S5SN"
+uri = "file://SANTI_GoogleIO_2026.zip"
+type = "unspecified"
+title = "SANTI · Paquete Completo Google I/O 2026 (ZIP)"
+
+[[outputs]]
+id = "o5hrD7FOWNYwPReMdqDrq"
+uri = "file://GOOGLE_IO_2026_SUBMISSION.md"
+type = "text"
+title = "SANTI · Documento de Registro Google I/O 2026"
+
+[[outputs]]
+id = "n0WAR6fXa1aVQDVGB6Sdi"
+uri = "file://INSTRUCCIONES_NUEVO_ECOSISTEMA.md"
+type = "text"
+title = "SANTI · Instrucciones para continuar en otro Replit"
