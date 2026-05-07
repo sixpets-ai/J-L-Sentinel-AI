@@ -15,8 +15,8 @@ delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIcon
 const QUADRANTS = ["NORTE", "SUR", "ORIENTE", "PONIENTE", "CENTRO", "BUGAMBILIAS", "EL MIRADOR", "ACATLIPA", "BLVD. JUÁREZ"];
 
 const AGENTS = {
-  santi:    { name: "SANTI",       emoji: "🤖", color: "#C8A84B", role: "Coordinador Principal · IA Táctica", lang: "Español · Náhuatl" },
-  emiliano: { name: "EMILIANO",    emoji: "👮", color: "#1E88E5", role: "Mando Táctico · Operaciones", lang: "Español" },
+  santi:    { name: "SANTI",       emoji: "👮", color: "#C8A84B", role: "Coordinador Principal · IA Táctica", lang: "Español · Náhuatl" },
+  emiliano: { name: "EMILIANO",    emoji: "⚔️",  color: "#1E88E5", role: "Mando Táctico · Operaciones", lang: "Español" },
   maxi:     { name: "MAXIMILIANO", emoji: "🔎", color: "#9C27B0", role: "Inteligencia · C2 · OSINT", lang: "Español · Inglés" },
   santiago: { name: "SANTIAGO",    emoji: "🏫", color: "#00897B", role: "Escuela Segura · Prevención", lang: "Español · Náhuatl" },
   katering: { name: "KATERING",    emoji: "🦋", color: "#E91E8C", role: "Código Violeta · Género", lang: "Español · Náhuatl" },
@@ -595,7 +595,7 @@ export default function SantiCommand() {
             <span style={{fontSize:13}}>📞</span>
             <div>
               <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#FF1744",letterSpacing:.5}}>SECRETARIO SEG. PÚB.</div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#FF1744",letterSpacing:1}}>777-329-0000</div>
+              <div style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#FF1744",letterSpacing:1}}>564-096-7363</div>
             </div>
           </div>
           <div style={{width:1,height:30,background:"rgba(200,168,75,.1)"}}/>
