@@ -7,17 +7,17 @@
  */
 
 export * from "./activityItem";
-export * from "./analyzeIncidentBody";
-export * from "./createGeminiConversationBody";
-export * from "./createReportBody";
 export * from "./geminiConversation";
+export * from "./geminiConversationInput";
 export * from "./geminiConversationWithMessages";
 export * from "./geminiError";
+export * from "./geminiImageInput";
+export * from "./geminiImageResult";
 export * from "./geminiMessage";
-export * from "./generateGeminiImageBody";
-export * from "./generateGeminiImageResponse";
+export * from "./geminiMessageInput";
 export * from "./healthStatus";
 export * from "./incidentAnalysis";
+export * from "./incidentAnalysisInput";
 export * from "./incidentReport";
+export * from "./incidentReportInput";
 export * from "./operationalStats";
-export * from "./sendGeminiMessageBody";

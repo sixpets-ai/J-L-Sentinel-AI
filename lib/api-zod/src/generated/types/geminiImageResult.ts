@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateGeminiConversationBody {
-  title: string;
+export interface GeminiImageResult {
+  b64_json: string;
+  mimeType: string;
 }

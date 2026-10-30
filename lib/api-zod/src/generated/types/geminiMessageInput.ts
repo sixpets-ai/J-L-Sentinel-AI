@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface GenerateGeminiImageBody {
-  prompt: string;
+export interface GeminiMessageInput {
+  content: string;
 }

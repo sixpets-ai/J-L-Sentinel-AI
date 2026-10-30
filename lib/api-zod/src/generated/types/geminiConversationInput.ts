@@ -6,6 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SendGeminiMessageBody {
-  content: string;
+export interface GeminiConversationInput {
+  title: string;
 }
