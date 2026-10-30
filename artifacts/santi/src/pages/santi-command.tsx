@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useGetStats, useAnalyzeIncident, useCreateReport } from "@workspace/api-client-react";
+import { getGetStatsQueryKey, useGetStats, useAnalyzeIncident, useCreateReport } from "@workspace/api-client-react";
 import {
   PATROL_UNITS_CONFIG, patrolCarSvg, getUnitForIncidentType, getFolioDependency,
   type PatrolUnit,
 } from "@/lib/patrol-icons";
 import { playNewReport, playProximityAlert, playCriticalAlert, playAgentActivated, playUnitArrival } from "@/lib/audio";
+import {
+  speakAsAgent, stopAgentSpeech,
+} from "@/lib/agent-speech";
+import { useSpeechDictation } from "@/hooks/use-speech-dictation";
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 
@@ -15,11 +19,11 @@ delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIcon
 const QUADRANTS = ["NORTE", "SUR", "ORIENTE", "PONIENTE", "CENTRO", "BUGAMBILIAS", "EL MIRADOR", "ACATLIPA", "BLVD. JUÁREZ"];
 
 const AGENTS = {
-  santi:    { name: "SANTI",       emoji: "👮", color: "#C8A84B", role: "Coordinador Principal · IA Táctica", lang: "Español · Náhuatl" },
-  emiliano: { name: "EMILIANO",    emoji: "⚔️",  color: "#1E88E5", role: "Mando Táctico · Operaciones", lang: "Español" },
-  maxi:     { name: "MAXIMILIANO", emoji: "🔎", color: "#9C27B0", role: "Inteligencia · C2 · OSINT", lang: "Español · Inglés" },
-  santiago: { name: "SANTIAGO",    emoji: "🏫", color: "#00897B", role: "Escuela Segura · Prevención", lang: "Español · Náhuatl" },
-  katering: { name: "KATERING",    emoji: "🦋", color: "#E91E8C", role: "Código Violeta · Género", lang: "Español · Náhuatl" },
+  santi:    { name: "SANTI",       emoji: "👮", color: "#C8A84B", role: "Coordinación · Asistente IA", lang: "Español · Náhuatl" },
+  emiliano: { name: "EMILIANO",    emoji: "⚔️",  color: "#1E88E5", role: "Operaciones · Simulación", lang: "Español" },
+  maxi:     { name: "MAXIMILIANO", emoji: "🔎", color: "#9C27B0", role: "Análisis general · Demo", lang: "Español · Inglés" },
+  santiago: { name: "SANTIAGO",    emoji: "🏫", color: "#00897B", role: "Prevención general · Demo", lang: "Español · Náhuatl" },
+  katering: { name: "KATERING",    emoji: "🦋", color: "#E91E8C", role: "Apoyo preventivo · Género", lang: "Español · Náhuatl" },
 } as const;
 type AgentId = keyof typeof AGENTS;
 
@@ -38,14 +42,6 @@ const TYPE_AGENT: Record<string, AgentId> = {
   "Narcomenudeo CJNG": "maxi", "Disparos activos": "emiliano",
   "Homicidio / Ejecución": "emiliano", "Extorsión / Gota a Gota": "maxi",
   "Desaparición": "santi",
-};
-
-const AGENT_SYSTEM: Record<AgentId, string> = {
-  santi: `Eres SANTI, el coordinador principal del Centro de Mando Operativo de Temixco, Morelos. Coordinas los 5 agentes IA y das análisis táctico de nivel superior. Hablas en lenguaje neuronal táctico. Responde en máximo 3 oraciones directas, precisas y accionables. Si te preguntan en náhuatl, responde en náhuatl.`,
-  emiliano: `Eres EMILIANO, el agente de mando táctico y operaciones de campo del C.M.O. Temixco. Especialista en operativos, despliegue de unidades y respuesta inmediata. Lenguaje directo, militar, conciso. Máximo 3 oraciones.`,
-  maxi: `Eres MAXIMILIANO, el agente de inteligencia y análisis C2 del C.M.O. Temixco. Especialista en OSINT, análisis de patrones delictivos, células del CJNG y extorsión. Lenguaje analítico, datos concretos. Máximo 3 oraciones.`,
-  santiago: `Eres SANTIAGO, el agente de Escuela Segura del C.M.O. Temixco. Especialista en perímetros escolares, prevención del delito juvenil y alertas en planteles. Lenguaje claro, preventivo. Máximo 3 oraciones. Puedes hablar náhuatl si te lo piden.`,
-  katering: `Eres KATERING, la agente de Código Violeta del C.M.O. Temixco. Especialista en violencia de género, feminicidios, Alerta AVG y protección de víctimas. Lenguaje empático, firme, protector. Máximo 3 oraciones. Puedes hablar náhuatl.`,
 };
 
 let _folioN = 47 + Math.floor(Math.random() * 5);
@@ -75,20 +71,28 @@ interface AnalysisResult {
 
 /* ─── MODAL: AGENT CHAT ─────────────────────────────────────── */
 function AgentChatModal({
-  agentId, onClose, speak,
-}: { agentId: AgentId; onClose: () => void; speak: (t: string, a: AgentId) => void }) {
+  agentId, onClose, speak, voiceEnabled, onToggleVoice,
+}: {
+  agentId: AgentId;
+  onClose: () => void;
+  speak: (t: string, a: AgentId) => void;
+  voiceEnabled: boolean;
+  onToggleVoice: () => void;
+}) {
   const ag = AGENTS[agentId];
   const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { role: "agent", text: `${ag.name} en línea. Centro de Mando Operativo activo. ¿Cuál es tu consulta táctica?` },
+    { role: "agent", text: `Soy ${ag.name}, asistente de IA de esta demostración. ¿Qué información general necesitas?` },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const { listening, error: voiceInputError, toggle: toggleListening } =
+    useSpeechDictation(setInput, () => setInput(""));
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   const send = useCallback(async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || listening) return;
     const q = input.trim();
     setInput("");
     setMsgs(p => [...p, { role: "user", text: q }]);
@@ -97,21 +101,23 @@ function AgentChatModal({
       const res = await fetch("/api/santi/agent-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, userMessage: q, systemPrompt: AGENT_SYSTEM[agentId] }),
+        body: JSON.stringify({ agentId, userMessage: q }),
       });
-      const data = await res.json();
+      const data: { response?: string; error?: string } = await res.json();
+      if (!res.ok) throw new Error(data.error || "No fue posible consultar al asistente.");
       const reply = data.response || "Sin respuesta del sistema.";
       setMsgs(p => [...p, { role: "agent", text: reply }]);
       speak(reply, agentId);
     } catch {
-      setMsgs(p => [...p, { role: "agent", text: "Error de conexión con el servidor neuronal." }]);
+      setMsgs(p => [...p, { role: "agent", text: "No pude conectar con el asistente. Puedes intentarlo de nuevo." }]);
     } finally { setLoading(false); }
-  }, [input, loading, agentId, speak]);
+  }, [input, loading, listening, agentId, speak]);
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,.82)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center" }}>
-      <div style={{ width:460,maxHeight:"78vh",display:"flex",flexDirection:"column",background:"#040F1D",border:`1px solid ${ag.color}30`,borderRadius:16,overflow:"hidden",boxShadow:`0 0 40px ${ag.color}20` }}>
+      style={{ position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,.82)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:12 }}>
+      <div role="dialog" aria-modal="true" aria-label={`Conversación con ${ag.name}`}
+        style={{ width:"min(520px, 100%)",maxHeight:"82vh",display:"flex",flexDirection:"column",background:"#040F1D",border:`1px solid ${ag.color}30`,borderRadius:16,overflow:"hidden",boxShadow:`0 0 40px ${ag.color}20` }}>
         {/* Header */}
         <div style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:`${ag.color}10`,borderBottom:`1px solid ${ag.color}20`,flexShrink:0 }}>
           <div style={{ width:44,height:44,borderRadius:"50%",background:`${ag.color}20`,border:`2px solid ${ag.color}50`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22 }}>{ag.emoji}</div>
@@ -121,9 +127,13 @@ function AgentChatModal({
             <div style={{ fontSize:9,color:`${ag.color}80`,fontFamily:"'Share Tech Mono',monospace",marginTop:1 }}>🌐 {ag.lang}</div>
           </div>
           <div style={{ marginLeft:"auto",display:"flex",gap:6,alignItems:"center" }}>
-            <div style={{ width:6,height:6,borderRadius:"50%",background:"#00E676",boxShadow:"0 0 6px #00E676" }}/>
-            <span style={{ fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#00E676" }}>EN LÍNEA</span>
+            <span style={{ fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#C8A84B" }}>IA · DEMO</span>
           </div>
+          <button type="button" onClick={onToggleVoice} aria-pressed={voiceEnabled}
+            title={voiceEnabled ? "Desactivar respuestas por voz" : "Activar respuestas por voz"}
+            style={{background:voiceEnabled?`${ag.color}18`:"rgba(0,0,0,.2)",border:`1px solid ${ag.color}35`,borderRadius:7,color:ag.color,fontFamily:"'Share Tech Mono',monospace",fontSize:8,padding:"7px 8px",cursor:"pointer",whiteSpace:"nowrap"}}>
+            {voiceEnabled ? "VOZ ACTIVA" : "ACTIVAR VOZ"}
+          </button>
           <button onClick={onClose} style={{ marginLeft:8,background:"none",border:"none",color:"#3A5A7A",fontSize:18,cursor:"pointer",padding:4 }}>✕</button>
         </div>
         {/* Messages */}
@@ -151,15 +161,28 @@ function AgentChatModal({
           <div ref={endRef} />
         </div>
         {/* Input */}
-        <div style={{ padding:"10px 14px",borderTop:`1px solid ${ag.color}20`,display:"flex",gap:8,flexShrink:0 }}>
-          <input value={input} onChange={e=>setInput(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&send()}
-            placeholder={`Consulta a ${ag.name}...`}
-            style={{ flex:1,background:"rgba(0,0,0,.4)",border:`1px solid ${ag.color}30`,borderRadius:8,padding:"8px 12px",color:"#D0E8FF",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none" }} />
-          <button onClick={send} disabled={loading||!input.trim()}
-            style={{ padding:"8px 14px",background:loading?`${ag.color}20`:`${ag.color}18`,border:`1px solid ${ag.color}50`,borderRadius:8,color:ag.color,fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,cursor:"pointer",letterSpacing:1,transition:"all .2s",opacity:(!input.trim()||loading)?.6:1 }}>
-            ENVIAR
-          </button>
+        <div style={{ padding:"10px 14px",borderTop:`1px solid ${ag.color}20`,flexShrink:0 }}>
+          {voiceInputError && <div role="status" style={{color:"#FF8C8C",fontSize:10,marginBottom:7}}>{voiceInputError}</div>}
+          <div style={{display:"flex",gap:7}}>
+            <button type="button" onClick={toggleListening} aria-label={listening ? "Detener dictado" : "Dictar mensaje"}
+              aria-pressed={listening} disabled={loading}
+              style={{padding:"8px 11px",background:listening?"rgba(255,23,68,.15)":`${ag.color}12`,border:`1px solid ${listening?"rgba(255,23,68,.6)":`${ag.color}40`}`,borderRadius:8,color:listening?"#FF6D6D":ag.color,fontSize:15,cursor:loading?"not-allowed":"pointer",opacity:loading?.55:1}}>
+              {listening ? "DETENER" : "MIC"}
+            </button>
+            <input value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&send()}
+              maxLength={2000}
+              aria-label={`Mensaje para ${ag.name}`}
+              placeholder={listening ? "Escuchando… revisa el texto antes de enviarlo" : `Escribe o dicta a ${ag.name}...`}
+              style={{ minWidth:0,flex:1,background:"rgba(0,0,0,.4)",border:`1px solid ${ag.color}30`,borderRadius:8,padding:"8px 12px",color:"#D0E8FF",fontFamily:"'Rajdhani',sans-serif",fontSize:13,outline:"none" }} />
+            <button type="button" onClick={send} disabled={loading||!input.trim()||listening}
+              style={{ padding:"8px 14px",background:loading?`${ag.color}20`:`${ag.color}18`,border:`1px solid ${ag.color}50`,borderRadius:8,color:ag.color,fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,cursor:"pointer",letterSpacing:1,transition:"all .2s",opacity:(!input.trim()||loading||listening)?.6:1 }}>
+              ENVIAR
+            </button>
+          </div>
+          <div style={{fontSize:9,color:"#526A80",lineHeight:1.4,marginTop:7}}>
+            El texto se procesa con IA. El micrófono solo se activa al pulsar y el navegador procesa el dictado; no ingreses datos personales reales ni información de incidentes activos.
+          </div>
         </div>
       </div>
     </div>
@@ -246,9 +269,12 @@ export default function SantiCommand() {
   const [coords, setCoords] = useState("LAT: 18.8405 · LNG: -99.2328");
 
   /* Speech */
-  const [speechText, setSpeechText] = useState("Sistema SANTI inicializado. Centro de Mando Operativo de Temixco activo. Todas las unidades en línea.");
+  const [speechText, setSpeechText] = useState("Bienvenido a SANTI NEXUS. Demostración interactiva con asistentes de IA y datos simulados.");
   const [speechAgent, setSpeechAgent] = useState<AgentId>("santi");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const speechRequestRef = useRef(0);
 
   /* State */
   const [activeTab, setActiveTab] = useState<"report"|"analysis"|"trace"|"log">("report");
@@ -263,6 +289,19 @@ export default function SantiCommand() {
   const [rCuadrante, setRCuadrante] = useState("");
   const [rReportantes, setRReportantes] = useState("1");
   const [analyzing, setAnalyzing] = useState(false);
+  const reportDictationBaseRef = useRef("");
+  const handleReportTranscript = useCallback((transcript: string) => {
+    const base = reportDictationBaseRef.current;
+    setRdesc(base ? `${base} ${transcript}` : transcript);
+  }, []);
+  const prepareReportDictation = useCallback(() => {
+    reportDictationBaseRef.current = rdesc.trim();
+  }, [rdesc]);
+  const {
+    listening: reportListening,
+    error: reportVoiceError,
+    toggle: toggleReportDictation,
+  } = useSpeechDictation(handleReportTranscript, prepareReportDictation);
 
   /* Current incident state */
   const [currentFolio, setCurrentFolio] = useState<FolioEntry|null>(null);
@@ -288,7 +327,16 @@ export default function SantiCommand() {
 
   const analyzeIncident = useAnalyzeIncident();
   const createReport = useCreateReport();
-  const { data: serverStats } = useGetStats({ query: { refetchInterval: 30000 } });
+  const { data: serverStats } = useGetStats({ query: { queryKey: getGetStatsQueryKey(), refetchInterval: 30000 } });
+
+  const toggleVoice = useCallback(() => {
+    if (voiceEnabled) {
+      speechRequestRef.current += 1;
+      stopAgentSpeech();
+      setIsSpeaking(false);
+    }
+    setVoiceEnabled(!voiceEnabled);
+  }, [voiceEnabled]);
 
   /* ── Clock ── */
   useEffect(() => {
@@ -302,6 +350,7 @@ export default function SantiCommand() {
     };
     tick(); const id = setInterval(tick,1000); return ()=>clearInterval(id);
   },[]);
+  useEffect(() => () => stopAgentSpeech(), []);
 
   /* ── Server stats ── */
   useEffect(()=>{
@@ -388,20 +437,24 @@ export default function SantiCommand() {
   },[]);
 
   /* ── Speech ── */
-  const speak=useCallback((text:string,agentId:AgentId)=>{
-    setSpeechAgent(agentId); setSpeechText(text); setIsSpeaking(true);
-    if(window.speechSynthesis){
-      window.speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text);
-      u.lang="es-MX"; u.rate=.88; u.pitch=agentId==="katering"?1.15:agentId==="santiago"?1.05:.92;
-      const vs=window.speechSynthesis.getVoices();
-      const v=vs.find(x=>x.lang==="es-MX")||vs.find(x=>x.lang.startsWith("es"));
-      if(v) u.voice=v;
-      u.onend=()=>setIsSpeaking(false);
-      window.speechSynthesis.speak(u);
+  const speak=useCallback((text:string,agentId:AgentId,force=false)=>{
+    setSpeechAgent(agentId);
+    setSpeechText(text);
+    if (!voiceEnabled && !force) {
+      setIsSpeaking(false);
+      return;
     }
-    setTimeout(()=>setIsSpeaking(false),6000);
-  },[]);
+
+    const requestId = ++speechRequestRef.current;
+    const started = speakAsAgent(text, agentId, () => {
+      if (requestId === speechRequestRef.current) setIsSpeaking(false);
+    });
+    setIsSpeaking(started);
+    if (!started) {
+      setVoiceEnabled(false);
+      setSpeechText("La voz no está disponible en este navegador. Puedes continuar por escrito.");
+    }
+  },[voiceEnabled]);
 
   /* ── Animate unit to incident ── */
   const animateUnitTo=useCallback((unitId:string, targetLat:number, targetLng:number, folio:string)=>{
@@ -450,6 +503,7 @@ export default function SantiCommand() {
 
   /* ── Send Report ── */
   const sendReport=useCallback(async()=>{
+    if(reportListening){alert("Detén el dictado antes de registrar el reporte.");return;}
     if(!rtype){ alert("Selecciona el tipo de incidente."); return; }
     if(!audioInit.current){ audioInit.current=true; }
     playNewReport();
@@ -481,7 +535,7 @@ export default function SantiCommand() {
     try {
       const analysis=await analyzeIncident.mutateAsync({ data:{tipo:rtype,descripcion:rdesc||undefined,sector:rCuadrante||"Temixco",folio,agente:agentId} });
       setAiAnalysis(analysis);
-      createReport.mutate({data:{folio,tipo:rtype,descripcion:rdesc||undefined,sector:rCuadrante||"Temixco",latitud:lat,longitud:lng,agente:agentId,nivelRiesgo:analysis.nivelRiesgo,analisis:analysis.analisis,accionesRecomendadas:analysis.accionesRecomendadas?.join(" | "),unidadesRequeridas:analysis.unidadesRequeridas,protocolo:analysis.protocolo,coordinacion:analysis.coordinacion}});
+      createReport.mutate({data:{folio,tipo:rtype,descripcion:rdesc||undefined,sector:rCuadrante||"Temixco",latitud:lat,longitud:lng,agente:agentId,nivelRiesgo:analysis.nivelRiesgo,analisis:analysis.analisis}});
       if(analysis.nivelRiesgo==="CRÍTICO"){ playCriticalAlert(); setStats(p=>({...p,critical:p.critical+1})); }
       speak(analysis.analisis,agentId);
       setActivity(p=>[{time:nowStr(),color:RISK_COLOR[analysis.nivelRiesgo]||"#C8A84B",msg:`GEMINI IA · ${folio} · Riesgo: ${analysis.nivelRiesgo} · ${analysis.protocolo}`},...p].slice(0,20));
@@ -492,7 +546,7 @@ export default function SantiCommand() {
       setTimeout(()=>animateUnitTo(unitId,lat,lng,folio),3000);
     } finally { setAnalyzing(false); }
     setRtype(""); setRdesc(""); setRDenunciante(""); setRContacto(""); setRCuadrante(""); setRReportantes("1");
-  },[rtype,rdesc,rDenunciante,rContacto,rCuadrante,rReportantes,speak,addIncidentOnMap,animateUnitTo,analyzeIncident,createReport]);
+  },[rtype,rdesc,rDenunciante,rContacto,rCuadrante,rReportantes,reportListening,speak,addIncidentOnMap,animateUnitTo,analyzeIncident,createReport]);
 
   /* ── Secretary Alert ── */
   const repSec=useCallback(()=>{
@@ -561,7 +615,36 @@ export default function SantiCommand() {
       `}</style>
 
       {/* Modals */}
-      {chatAgent && <AgentChatModal agentId={chatAgent} onClose={()=>setChatAgent(null)} speak={speak}/>}
+      {showWelcome && (
+        <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,5,9,.94)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <section role="dialog" aria-modal="true" aria-labelledby="santi-welcome-title"
+            style={{width:"min(700px, 100%)",padding:"clamp(24px, 5vw, 52px)",borderRadius:20,border:"1px solid rgba(200,168,75,.35)",background:"radial-gradient(ellipse at top, rgba(200,168,75,.12), rgba(4,15,29,.98) 65%)",boxShadow:"0 24px 90px rgba(0,0,0,.55)",textAlign:"center"}}>
+            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:11,color:"#C8A84B",letterSpacing:3,marginBottom:18}}>DEMOSTRACIÓN INTERACTIVA · DATOS SIMULADOS</div>
+            <h1 id="santi-welcome-title" style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(28px, 5vw, 48px)",lineHeight:1.2,letterSpacing:2,margin:"0 0 14px",color:"#F1D47B"}}>Bienvenido a SANTI NEXUS</h1>
+            <p style={{maxWidth:530,margin:"0 auto 12px",fontSize:16,lineHeight:1.6,color:"#C8D8E8"}}>
+              SANTI y sus agentes son asistentes de inteligencia artificial. Esta demostración no está conectada a servicios oficiales, unidades ni alertas reales.
+            </p>
+            <p style={{maxWidth:530,margin:"0 auto 26px",fontSize:13,lineHeight:1.6,color:"#86A1B8"}}>
+              Puedes escribir o dictar tu consulta. El micrófono solo se activa cuando lo pulsas; el navegador procesa la transcripción. No incluyas datos personales reales ni detalles de incidentes activos.
+            </p>
+            <div style={{display:"flex",justifyContent:"center",gap:10,flexWrap:"wrap"}}>
+              <button type="button" onClick={()=>{
+                setShowWelcome(false);
+                setVoiceEnabled(true);
+                speak("Bienvenido a SANTI NEXUS. Esta es una demostración interactiva con asistentes de inteligencia artificial y datos simulados.", "santi", true);
+              }}
+                style={{padding:"12px 20px",borderRadius:9,border:"1px solid rgba(200,168,75,.65)",background:"rgba(200,168,75,.16)",color:"#F1D47B",fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,letterSpacing:1,cursor:"pointer"}}>
+                ESCUCHAR BIENVENIDA
+              </button>
+              <button type="button" onClick={()=>{stopAgentSpeech();setVoiceEnabled(false);setShowWelcome(false);}}
+                style={{padding:"12px 20px",borderRadius:9,border:"1px solid rgba(134,161,184,.35)",background:"rgba(8,23,39,.8)",color:"#C8D8E8",fontFamily:"'Orbitron',monospace",fontSize:11,fontWeight:700,letterSpacing:1,cursor:"pointer"}}>
+                CONTINUAR EN SILENCIO
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {chatAgent && <AgentChatModal agentId={chatAgent} onClose={()=>setChatAgent(null)} speak={speak} voiceEnabled={voiceEnabled} onToggleVoice={toggleVoice}/>}
       {openModule && <ModuleModal moduleId={openModule} onClose={()=>setOpenModule(null)} speak={speak}/>}
 
       <div style={{height:"100vh",display:"flex",flexDirection:"column"}}>
@@ -605,9 +688,9 @@ export default function SantiCommand() {
             <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",letterSpacing:.5}}>{clockDate}</div>
           </div>
           {/* Live indicator */}
-          <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:999,background:"rgba(0,230,118,.07)",border:"1px solid rgba(0,230,118,.18)",flexShrink:0}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:"#00E676",boxShadow:"0 0 6px #00E676",animation:"pulse-dot 1.4s infinite"}}/>
-            <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#00E676",letterSpacing:1}}>EN VIVO</span>
+          <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:999,background:"rgba(200,168,75,.08)",border:"1px solid rgba(200,168,75,.24)",flexShrink:0}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:"#C8A84B"}}/>
+            <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#C8A84B",letterSpacing:1}}>SIMULACIÓN</span>
           </div>
         </header>
 
@@ -645,6 +728,10 @@ export default function SantiCommand() {
                 {analyzing&&<span style={{marginLeft:"auto",fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#1E88E5",letterSpacing:.5}}>⚡ GEMINI PROCESANDO</span>}
               </div>
               <div style={{fontSize:11,lineHeight:1.6,color:"#8AAAC8"}}>{speechText.length>120?speechText.slice(0,120)+"...":speechText}</div>
+              <button type="button" onClick={toggleVoice} aria-pressed={voiceEnabled}
+                style={{marginTop:8,padding:"5px 8px",borderRadius:6,border:`1px solid ${voiceEnabled?"rgba(0,230,118,.45)":"rgba(200,168,75,.3)"}`,background:voiceEnabled?"rgba(0,230,118,.08)":"rgba(0,0,0,.22)",color:voiceEnabled?"#00E676":"#C8A84B",fontFamily:"'Share Tech Mono',monospace",fontSize:8,letterSpacing:.8,cursor:"pointer"}}>
+                {voiceEnabled ? "RESPUESTAS POR VOZ ACTIVAS" : "ACTIVAR RESPUESTAS POR VOZ"}
+              </button>
             </div>
 
             {/* Folio list */}
@@ -723,8 +810,18 @@ export default function SantiCommand() {
                           </select>
                           <input className="rselect" type="number" min="1" value={rReportantes} onChange={e=>setRReportantes(e.target.value)} placeholder="# Reportantes"/>
                         </div>
-                        <textarea className="rtexta" rows={2} style={{fontSize:12}} placeholder="Descripción del incidente..." value={rdesc} onChange={e=>setRdesc(e.target.value)}/>
-                        <button onClick={sendReport} disabled={analyzing||!rtype}
+                        <div style={{display:"flex",gap:5,alignItems:"stretch"}}>
+                          <textarea className="rtexta" rows={2} style={{fontSize:12,flex:1,minWidth:0}} placeholder="Descripción ficticia para la demostración..." value={rdesc} onChange={e=>setRdesc(e.target.value)}/>
+                          <button type="button" onClick={toggleReportDictation} aria-label={reportListening?"Detener dictado del reporte":"Dictar descripción del reporte"} aria-pressed={reportListening}
+                            style={{minWidth:58,padding:"6px",background:reportListening?"rgba(255,23,68,.12)":"rgba(0,229,255,.06)",border:`1px solid ${reportListening?"rgba(255,23,68,.55)":"rgba(0,229,255,.22)"}`,borderRadius:6,color:reportListening?"#FF6D6D":"#00E5FF",fontFamily:"'Share Tech Mono',monospace",fontSize:8,cursor:"pointer"}}>
+                            {reportListening?"DETENER":"MIC"}
+                          </button>
+                        </div>
+                        {reportVoiceError&&<div role="status" style={{fontSize:9,color:"#FF8C8C"}}>{reportVoiceError}</div>}
+                        <div style={{fontSize:9,color:"#526A80",lineHeight:1.35}}>
+                          Demo: usa datos ficticios. Al registrar, el texto se guarda y se procesa con IA.
+                        </div>
+                        <button onClick={sendReport} disabled={analyzing||!rtype||reportListening}
                           style={{padding:"8px",background:analyzing?"rgba(200,168,75,.06)":"linear-gradient(135deg,#C8A84B,#8A6A20)",border:"none",borderRadius:6,cursor:analyzing||!rtype?"not-allowed":"pointer",fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,letterSpacing:1,color:analyzing?"#3A5A7A":"#000",transition:"all .2s",opacity:!rtype?.5:1}}>
                           {analyzing?"⚡ ANALIZANDO CON GEMINI IA...":"⚡ REGISTRAR REPORTE"}
                         </button>
