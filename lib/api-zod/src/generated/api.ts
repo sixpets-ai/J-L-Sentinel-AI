@@ -76,10 +76,10 @@ export const CreateReportBody = zod.object({
 export const GetStatsResponse = zod.object({
   totalReports: zod.number(),
   criticalAlerts: zod.number(),
-  activeUnits: zod.number(),
-  resolvedToday: zod.number(),
-  avgResponseMinutes: zod.number(),
-  topIncidentType: zod.string(),
+  activeUnits: zod.number().nullable(),
+  resolvedToday: zod.number().nullable(),
+  avgResponseMinutes: zod.number().nullable(),
+  topIncidentType: zod.string().nullable(),
   recentActivity: zod.array(
     zod.object({
       time: zod.string(),

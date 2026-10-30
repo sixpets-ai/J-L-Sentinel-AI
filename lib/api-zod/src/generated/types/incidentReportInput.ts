@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateReportBody {
+export interface IncidentReportInput {
   folio: string;
   tipo: string;
   descripcion?: string;

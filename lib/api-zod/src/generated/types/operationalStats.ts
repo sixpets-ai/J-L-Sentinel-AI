@@ -10,9 +10,13 @@ import type { ActivityItem } from "./activityItem";
 export interface OperationalStats {
   totalReports: number;
   criticalAlerts: number;
-  activeUnits: number;
-  resolvedToday: number;
-  avgResponseMinutes: number;
-  topIncidentType: string;
+  /** @nullable */
+  activeUnits: number | null;
+  /** @nullable */
+  resolvedToday: number | null;
+  /** @nullable */
+  avgResponseMinutes: number | null;
+  /** @nullable */
+  topIncidentType: string | null;
   recentActivity: ActivityItem[];
 }

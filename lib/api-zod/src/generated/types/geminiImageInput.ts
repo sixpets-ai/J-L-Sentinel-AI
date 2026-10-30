@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface GenerateGeminiImageResponse {
-  b64_json: string;
-  mimeType: string;
+export interface GeminiImageInput {
+  prompt: string;
 }

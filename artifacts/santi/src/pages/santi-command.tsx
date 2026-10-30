@@ -2,53 +2,44 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { getGetStatsQueryKey, useGetStats, useAnalyzeIncident, useCreateReport } from "@workspace/api-client-react";
-import {
-  PATROL_UNITS_CONFIG, patrolCarSvg, getUnitForIncidentType, getFolioDependency,
-  type PatrolUnit,
-} from "@/lib/patrol-icons";
-import { playNewReport, playProximityAlert, playCriticalAlert, playAgentActivated, playUnitArrival } from "@/lib/audio";
+import { playNewReport, playAgentActivated } from "@/lib/audio";
 import {
   speakAsAgent, stopAgentSpeech,
 } from "@/lib/agent-speech";
 import { useSpeechDictation } from "@/hooks/use-speech-dictation";
+import { DemoModuleDialog, DEMO_MODULES, PanicDemoDialog, type DemoModuleId } from "@/components/demo-module-dialog";
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 
 /* ─── CONSTANTS ────────────────────────────────────────────── */
 
-const QUADRANTS = ["NORTE", "SUR", "ORIENTE", "PONIENTE", "CENTRO", "BUGAMBILIAS", "EL MIRADOR", "ACATLIPA", "BLVD. JUÁREZ"];
-
 const AGENTS = {
-  santi:    { name: "SANTI",       emoji: "👮", color: "#C8A84B", role: "Coordinación · Asistente IA", lang: "Español · Náhuatl" },
-  emiliano: { name: "EMILIANO",    emoji: "⚔️",  color: "#1E88E5", role: "Operaciones · Simulación", lang: "Español" },
-  maxi:     { name: "MAXIMILIANO", emoji: "🔎", color: "#9C27B0", role: "Análisis general · Demo", lang: "Español · Inglés" },
-  santiago: { name: "SANTIAGO",    emoji: "🏫", color: "#00897B", role: "Prevención general · Demo", lang: "Español · Náhuatl" },
-  katering: { name: "KATERING",    emoji: "🦋", color: "#E91E8C", role: "Apoyo preventivo · Género", lang: "Español · Náhuatl" },
+  santi:    { name: "SANTI",       emoji: "👮", color: "#C8A84B", role: "Asistente de IA · Demo", lang: "Español" },
+  emiliano: { name: "EMILIANO",    emoji: "⚔️",  color: "#1E88E5", role: "Asistente de IA · Demo", lang: "Español" },
+  maxi:     { name: "MAXIMILIANO", emoji: "🔎", color: "#9C27B0", role: "Asistente de IA · Demo", lang: "Español" },
+  santiago: { name: "SANTIAGO",    emoji: "🏫", color: "#00897B", role: "Asistente de IA · Demo", lang: "Español" },
+  katering: { name: "KATERING",    emoji: "🦋", color: "#E91E8C", role: "Asistente de IA · Demo", lang: "Español" },
 } as const;
 type AgentId = keyof typeof AGENTS;
 
 const CRIME_TYPES = [
-  "Robo / Asalto", "Violencia familiar", "Narcomenudeo CJNG",
-  "Extorsión / Gota a Gota", "Disparos activos", "Desaparición",
-  "Vehículo sospechoso", "Seguridad escolar", "Homicidio / Ejecución",
+  "Robo / asalto", "Violencia familiar", "Narcomenudeo",
+  "Extorsión", "Arma o disparos", "Persona no localizada",
+  "Seguridad escolar", "Amenazas", "Otra observación",
 ];
 
 const RISK_COLOR: Record<string, string> = {
-  CRÍTICO: "#FF1744", ALTO: "#FF6D00", MEDIO: "#FFD166", BAJO: "#00E676",
+  "NO EVALUADO": "#AAB8C2",
 };
 
 const TYPE_AGENT: Record<string, AgentId> = {
   "Violencia familiar": "katering", "Seguridad escolar": "santiago",
-  "Narcomenudeo CJNG": "maxi", "Disparos activos": "emiliano",
-  "Homicidio / Ejecución": "emiliano", "Extorsión / Gota a Gota": "maxi",
-  "Desaparición": "santi",
+  "Narcomenudeo": "maxi", "Arma o disparos": "emiliano",
+  "Extorsión": "maxi", "Persona no localizada": "santi",
 };
 
-let _folioN = 47 + Math.floor(Math.random() * 5);
-function genFolio(tipo: string) {
-  _folioN++;
-  const dep = getFolioDependency(tipo);
-  return `${dep}-TMX-2026-${String(_folioN).padStart(4, "0")}`;
+function genFolio() {
+  return `SANTI-DEMO-${Date.now().toString(36).toUpperCase()}`;
 }
 
 function nowStr() {
@@ -58,8 +49,8 @@ function nowStr() {
 
 interface FolioEntry {
   folio: string; tipo: string; agente: AgentId;
-  denunciante: string; cuadrante: string; horaEntrada: string;
-  lat: number; lng: number; status: string; unitAsigned: string;
+  sector: string; horaEntrada: string;
+  lat?: number; lng?: number;
 }
 interface ChatMsg { role: "user"|"agent"; text: string; }
 interface TraceEntry { time: string; event: string; }
@@ -189,84 +180,17 @@ function AgentChatModal({
   );
 }
 
-/* ─── MODAL: TACTICAL MODULE ─────────────────────────────────── */
-interface TacModule { ico:string; ttl:string; sub:string; agent:AgentId; steps:{n:string;t:string;d:string}[]; alert:string }
-const MODULES: Record<string, TacModule> = {
-  mujer: { ico:"🦋", ttl:"CÓDIGO VIOLETA", sub:"PROTOCOLO AVG · KATERING", agent:"katering", steps:[
-    {n:"01",t:"Lugar seguro",d:"Sal del domicilio. Busca vecinos, tiendas o espacios públicos concurridos."},
-    {n:"02",t:"Activa el reporte",d:"KATERING coordina con IMM Temixco, DIF Municipal y unidades especializadas de género."},
-    {n:"03",t:"Documenta",d:"Fotos de lesiones, capturas de mensajes, testigos. Sin riesgo personal."},
-    {n:"04",t:"Orden de protección",d:"Derecho a orden de restricción inmediata. Asesoría jurídica municipal gratuita."},
-    {n:"05",t:"Líneas de apoyo",d:"INMUJERES 800-108-4053 · IMM Temixco · DIF Morelos. Identidad protegida."},
-  ], alert:"<strong>2024:</strong> 10 carpetas de feminicidio en Temixco. AVG activa 10+ años." },
-  extorsion: { ico:"🔒", ttl:"ANTIEXTORSIÓN", sub:"GOTA A GOTA · COBRO DE PISO · MAXIMILIANO", agent:"maxi", steps:[
-    {n:"01",t:"No pagues más",d:"El pago alimenta el ciclo. Documenta: números, montos, fechas y descripción."},
-    {n:"02",t:"Sin confrontación",d:"Maximiliano opera desde inteligencia. No amenaces ni acuses directamente."},
-    {n:"03",t:"Evidencia digital",d:"Pantallazos de mensajes, números de teléfono, horarios y puntos de cobro."},
-    {n:"04",t:"Reporte anónimo",d:"Tu identidad NO se vincula al folio. Va directo a FGR y unidad especializada."},
-    {n:"05",t:"Riesgo físico",d:"Si hay amenaza corporal inmediata: 911 + Reporte Directo al Secretario en SANTI."},
-  ], alert:"<strong>2025:</strong> Temixco entre los 6 municipios con mayor Gota a Gota en Morelos. 24 detenidos." },
-  escuela: { ico:"🏫", ttl:"ESCUELA SEGURA", sub:"PERÍMETROS · CUADRANTES · SANTIAGO", agent:"santiago", steps:[
-    {n:"01",t:"Identifica el riesgo",d:"Persona sospechosa en perímetro, sustancias, violencia entre alumnos."},
-    {n:"02",t:"Reporta con seguridad",d:"Santiago notifica al director y a la unidad del sector simultáneamente."},
-    {n:"03",t:"Sin intervención física",d:"Documenta desde distancia. Tu seguridad es prioridad."},
-    {n:"04",t:"Horarios críticos",d:"Patrullaje reforzado: entrada 7-8:30 AM y salida 1-2:30 PM."},
-    {n:"05",t:"Evidencia",d:"Folio activa intervención de Trabajo Social municipal. Video como prueba."},
-  ], alert:"<strong>2025:</strong> Venta de sustancias y autolesiones documentadas en zona sur de Temixco." },
-  desaparicion: { ico:"🔍", ttl:"DESAPARICIÓN", sub:"PROTOCOLO ALBA · AVG · BUSCADORAS", agent:"santi", steps:[
-    {n:"01",t:"Actúa YA",d:"No esperes 24 horas. Cada hora es crítica. Repórtalo ahora."},
-    {n:"02",t:"Datos esenciales",d:"Nombre, edad, foto reciente, ropa, última ubicación conocida."},
-    {n:"03",t:"Búsqueda coordinada",d:"DIF, SIPINNA, FGE y colectivos de madres buscadoras: notificados en 3 min."},
-    {n:"04",t:"Ficha automática",d:"El sistema genera ficha con foto para difusión inmediata."},
-    {n:"05",t:"Mantén comunicación",d:"Teléfono disponible. Coordinación por folio en SANTI."},
-  ], alert:"<strong>13/03/2026:</strong> Alex Uriel Bello, 15 años, Cuentepec. Con SANTI: coordinación en menos de 3 min." },
-  narco: { ico:"🎯", ttl:"NARCOMENUDEO · CJNG", sub:"CÉLULA EL TRÉBOL · MAXIMILIANO", agent:"maxi", steps:[
-    {n:"01",t:"Sin exposición",d:"Reporta desde lugar seguro. No fotografíes puntos activos de venta."},
-    {n:"02",t:"Información táctica",d:"Dirección exacta, horarios, vehículos y personas si es seguro."},
-    {n:"03",t:"Anonimato total",d:"Identidad NO vinculada al folio. Reporte cifrado va a FGR."},
-    {n:"04",t:"Sin redes sociales",d:"No publiques en Facebook/WhatsApp/TikTok. Puede alertar a las células."},
-    {n:"05",t:"Cámaras WiFi ilegales",d:"Cámaras no institucionales en postes = red CJNG. Repórtalo."},
-  ], alert:"<strong>Confirmado SSPC 2025:</strong> Célula 'El Trébol' en Bugambilias y El Mirador. 93 cámaras WiFi ilegales desmanteladas." },
-};
-
-function ModuleModal({ moduleId, onClose, speak }: { moduleId: string; onClose: () => void; speak: (t:string,a:AgentId)=>void }) {
-  const m = MODULES[moduleId];
-  const ag = AGENTS[m.agent];
-  return (
-    <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{position:"fixed",inset:0,zIndex:1500,background:"rgba(0,0,0,.8)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{width:460,maxHeight:"80vh",overflowY:"auto",background:"#040F1D",border:`1px solid ${ag.color}30`,borderRadius:16,padding:22,boxShadow:`0 0 40px ${ag.color}15`}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,paddingBottom:14,borderBottom:`1px solid ${ag.color}15`}}>
-          <span style={{fontSize:28}}>{m.ico}</span>
-          <div><div style={{fontFamily:"'Orbitron',monospace",fontSize:15,fontWeight:700,letterSpacing:.5}}>{m.ttl}</div>
-          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#3A5A7A",marginTop:3,letterSpacing:1}}>{m.sub}</div></div>
-          <button onClick={onClose} style={{marginLeft:"auto",background:"none",border:"none",color:"#3A5A7A",fontSize:18,cursor:"pointer"}}>✕</button>
-        </div>
-        {m.steps.map((s,i)=>(
-          <div key={i} style={{display:"flex",gap:10,marginBottom:8,padding:"10px 11px",background:"rgba(0,0,0,.35)",border:`1px solid ${ag.color}15`,borderRadius:10}}>
-            <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:900,color:ag.color,flexShrink:0}}>{s.n}</div>
-            <div><div style={{fontWeight:700,fontSize:13,marginBottom:2}}>{s.t}</div><div style={{fontSize:11,color:"#3A5A7A",lineHeight:1.5}}>{s.d}</div></div>
-          </div>
-        ))}
-        <div style={{background:"rgba(255,23,68,.05)",border:"1px solid rgba(255,23,68,.18)",borderRadius:10,padding:"10px 12px",marginTop:10,fontSize:11,color:"#6A90B8",lineHeight:1.6}} dangerouslySetInnerHTML={{__html:`<strong style="color:#FF1744">⚠️</strong> ${m.alert}`}}/>
-        <button onClick={()=>speak(`Protocolo ${m.ttl} activado. ${m.steps[0].t}: ${m.steps[0].d}`,m.agent)} style={{width:"100%",marginTop:12,padding:"10px",background:`${ag.color}12`,border:`1px solid ${ag.color}40`,borderRadius:8,color:ag.color,fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,letterSpacing:1,cursor:"pointer"}}>
-          🔊 ACTIVAR PROTOCOLO DE VOZ
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ─── MAIN COMPONENT ────────────────────────────────────────── */
 export default function SantiCommand() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map|null>(null);
-  const patrolsRef = useRef<Map<string, { marker: L.Marker; unit: PatrolUnit }>>(new Map());
-  const incidentMarkersRef = useRef<L.Circle[]>([]);
+  const selectedLocationMarkerRef = useRef<L.CircleMarker|null>(null);
   const audioInit = useRef(false);
 
   const [clock, setClock] = useState("");
   const [clockDate, setClockDate] = useState("");
-  const [coords, setCoords] = useState("LAT: 18.8405 · LNG: -99.2328");
+  const [coords, setCoords] = useState("Haz clic en el mapa para elegir coordenadas (opcional)");
+  const [selectedCoords, setSelectedCoords] = useState<{ lat: number; lng: number }|null>(null);
 
   /* Speech */
   const [speechText, setSpeechText] = useState("Bienvenido a SANTI NEXUS. Demostración interactiva con asistentes de IA y datos simulados.");
@@ -279,15 +203,13 @@ export default function SantiCommand() {
   /* State */
   const [activeTab, setActiveTab] = useState<"report"|"analysis"|"trace"|"log">("report");
   const [chatAgent, setChatAgent] = useState<AgentId|null>(null);
-  const [openModule, setOpenModule] = useState<string|null>(null);
+  const [openModule, setOpenModule] = useState<DemoModuleId|null>(null);
+  const [panicDemoOpen, setPanicDemoOpen] = useState(false);
 
   /* Report form */
   const [rtype, setRtype] = useState("");
   const [rdesc, setRdesc] = useState("");
-  const [rDenunciante, setRDenunciante] = useState("");
-  const [rContacto, setRContacto] = useState("");
-  const [rCuadrante, setRCuadrante] = useState("");
-  const [rReportantes, setRReportantes] = useState("1");
+  const [rSector, setRSector] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const reportDictationBaseRef = useRef("");
   const handleReportTranscript = useCallback((transcript: string) => {
@@ -307,23 +229,11 @@ export default function SantiCommand() {
   const [currentFolio, setCurrentFolio] = useState<FolioEntry|null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<AnalysisResult|null>(null);
   const [traceLog, setTraceLog] = useState<TraceEntry[]>([]);
-  const [assignedUnit, setAssignedUnit] = useState<string>("");
-  const [unitStatus, setUnitStatus] = useState<string>("");
 
   /* Stats */
-  const [stats, setStats] = useState({ units: 12, reports: 47, critical: 3 });
-  const [activity, setActivity] = useState([
-    { time:"14:23", color:"#00E676", msg:"U-03 · Patrullaje Bugambilias · Sin novedad" },
-    { time:"14:21", color:"#FF6D00", msg:"MUN-TMX-2026-0041 · Robo transeúnte · Blvd. Juárez" },
-    { time:"14:18", color:"#FF1744", msg:"ALERTA · Vehículo reportado · Carr. 95 · U-07 notificada" },
-    { time:"14:15", color:"#00E5FF", msg:"C2-04 · Placa ABC-1234 · Periférico Norte · IA activa" },
-    { time:"14:10", color:"#00E676", msg:"MUN-TMX-2026-0040 · Caso cerrado · U-01 disponible" },
-  ]);
+  const [stats, setStats] = useState({ units: null as number|null, reports: 0, critical: 0 });
+  const [activity, setActivity] = useState<{time:string;color:string;msg:string}[]>([]);
   const [folioList, setFolioList] = useState<FolioEntry[]>([]);
-
-  /* Vehicle scan */
-  const [vehPlate, setVehPlate] = useState("");
-  const [vehResult, setVehResult] = useState<{plate:string;hits:number;tipo:string;loc:string}|null>(null);
 
   const analyzeIncident = useAnalyzeIncident();
   const createReport = useCreateReport();
@@ -346,7 +256,7 @@ export default function SantiCommand() {
       setClock(`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`);
       const days = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
       const months = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
-      setClockDate(`${days[n.getDay()]} ${p(n.getDate())} ${months[n.getMonth()]} 2026`);
+      setClockDate(`${days[n.getDay()]} ${p(n.getDate())} ${months[n.getMonth()]} ${n.getFullYear()}`);
     };
     tick(); const id = setInterval(tick,1000); return ()=>clearInterval(id);
   },[]);
@@ -356,84 +266,33 @@ export default function SantiCommand() {
   useEffect(()=>{
     if(!serverStats) return;
     setStats({ units:serverStats.activeUnits, reports:serverStats.totalReports, critical:serverStats.criticalAlerts });
-    if(serverStats.recentActivity?.length){
-      setActivity(prev=>[...serverStats.recentActivity.map(a=>({time:a.time,color:a.color,msg:a.message})),...prev].slice(0,20));
-    }
+    setActivity(serverStats.recentActivity?.map(a=>({time:a.time,color:a.color,msg:a.message})) ?? []);
   },[serverStats]);
-
-  /* ── Auto activity feed ── */
-  useEffect(()=>{
-    const feeds=[
-      {c:"#00E676",m:"U-01 · Patrullaje Periférico Norte · Sin novedad"},
-      {c:"#00E5FF",m:"C2-04 · Vehículo en tránsito registrado · Carr. 95D"},
-      {c:"#FF6D00",m:"Ciudadano · El Mirador · Reporte en proceso · SANTI IA"},
-      {c:"#00E676",m:"U-11 · GN · Bugambilias · Ronda completada · Sin novedad"},
-      {c:"#FF1744",m:"ALERTA CLUSTER · 3 reportes · Acatlipa · Últimas 2h"},
-      {c:"#9C27B0",m:"Maximiliano · Análisis C2 · Patrón detectado · Sector Sur"},
-      {c:"#00897B",m:"Santiago · Secundaria #3 · Perímetro OK · Horario escolar"},
-    ];
-    let idx=0;
-    const id=setInterval(()=>{
-      const f=feeds[idx++%feeds.length];
-      setActivity(prev=>[{time:nowStr(),color:f.c,msg:f.m},...prev].slice(0,20));
-    },12000);
-    return ()=>clearInterval(id);
-  },[]);
 
   /* ── Map ── */
   useEffect(()=>{
     if(!mapRef.current||mapInst.current) return;
-    const map=L.map(mapRef.current,{zoomControl:false,attributionControl:false}).setView([18.8405,-99.2328],14);
+    const map=L.map(mapRef.current,{zoomControl:false}).setView([18.8405,-99.2328],12);
     mapInst.current=map;
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd"}).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+      maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
-    // Heat layer
-    const heatData=[[18.848,-99.235,.98],[18.849,-99.234,.9],[18.842,-99.228,.95],[18.843,-99.229,.88],
-      [18.836,-99.241,.92],[18.835,-99.240,.85],[18.855,-99.230,.78],[18.845,-99.248,.7],[18.838,-99.238,.6]];
-    // @ts-expect-error leaflet.heat CDN
-    if(typeof L.heatLayer==="function") L.heatLayer(heatData,{radius:28,blur:20,maxZoom:16,gradient:{0.2:"#001F3F",0.5:"#0A4FD4",0.75:"#FF6D00",1:"#FF1744"}}).addTo(map);
 
-    // Risk zones
-    [[18.848,-99.235,200,"#FF1744","BUGAMBILIAS · CJNG EL TRÉBOL"],
-     [18.842,-99.228,170,"#FF1744","EL MIRADOR · NARCOMENUDEO"],
-     [18.836,-99.241,180,"#FF6D00","ACATLIPA · DISPAROS 2025"],
-     [18.845,-99.248,145,"#FF8C00","LOMAS AHUATLÁN · EXTORSIÓN"],
-     [18.832,-99.225,120,"#1565C0","ZONA ESCOLAR SUR"]].forEach(([la,ln,r,c,n])=>{
-      L.circle([la as number,ln as number],{color:c as string,fillColor:c as string,fillOpacity:.06,opacity:.2,weight:1,radius:r as number}).addTo(map)
-        .bindPopup(`<b style="color:${c}">${n}</b>`);
-      L.marker([la as number,ln as number],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:${c}80;letter-spacing:.8px;white-space:nowrap;text-shadow:0 0 8px rgba(0,0,0,.9)">${n}</div>`,className:"",iconSize:[180,12]})}).addTo(map);
+
+    map.on("click",event=>{
+      const point={lat:event.latlng.lat,lng:event.latlng.lng};
+      setSelectedCoords(point);
+      setCoords(`Selección manual · ${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`);
+      selectedLocationMarkerRef.current?.remove();
+      selectedLocationMarkerRef.current=L.circleMarker(event.latlng,{
+        radius:7,color:"#00E5FF",fillColor:"#00E5FF",fillOpacity:.8,weight:2,
+      }).addTo(map).bindPopup("Ubicación elegida manualmente para esta demostración").openPopup();
     });
-
-    // Patrol units
-    PATROL_UNITS_CONFIG.forEach(cfg=>{
-      const unit:PatrolUnit={...cfg,dlat:(Math.random()-.5)*.00018,dlng:(Math.random()-.5)*.00022};
-      const iconHtml=`<div style="filter:drop-shadow(0 0 5px ${unit.glowColor})">${patrolCarSvg(unit)}</div>`;
-      const icon=L.divIcon({html:iconHtml,className:"",iconSize:[30,50],iconAnchor:[15,50]});
-      const marker=L.marker([unit.lat,unit.lng],{icon}).addTo(map);
-      marker.bindPopup(`<b style="color:${unit.glowColor}">${unit.id}</b> · ${unit.label}<br>Sector: ${unit.sector}<br>Estado: <span style="color:${unit.glowColor}">${unit.status}</span>`);
-      patrolsRef.current.set(unit.id,{marker,unit});
-    });
-
-    // Road labels
-    [[18.843,-99.258,"BLVD. JUÁREZ"],[18.830,-99.233,"CARR. FED. 95"],[18.857,-99.244,"PERIFÉRICO NORTE"]].forEach(([la,ln,t])=>{
-      L.marker([la as number,ln as number],{icon:L.divIcon({html:`<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(200,168,75,.35);letter-spacing:.8px;white-space:nowrap">${t}</div>`,className:"",iconSize:[160,12]})}).addTo(map);
-    });
-
-    map.on("click",e=>setCoords(`LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`));
-    map.on("mousemove",e=>setCoords(`LAT: ${e.latlng.lat.toFixed(4)} · LNG: ${e.latlng.lng.toFixed(4)}`));
-
-    // Patrol movement loop
-    const moveId=setInterval(()=>{
-      patrolsRef.current.forEach(({marker,unit})=>{
-        if(unit.status==="En escena"||unit.status==="Llamado activo") return;
-        unit.lat+=unit.dlat; unit.lng+=unit.dlng;
-        if(unit.lat>18.870||unit.lat<18.820) unit.dlat*=-1;
-        if(unit.lng>-99.200||unit.lng<-99.280) unit.dlng*=-1;
-        marker.setLatLng([unit.lat,unit.lng]);
-      });
-    },1800);
-    return ()=>clearInterval(moveId);
+    L.control.zoom({position:"bottomright"}).addTo(map);
+    return ()=>{map.remove();mapInst.current=null;selectedLocationMarkerRef.current=null;};
   },[]);
 
   /* ── Speech ── */
@@ -456,127 +315,81 @@ export default function SantiCommand() {
     }
   },[voiceEnabled]);
 
-  /* ── Animate unit to incident ── */
-  const animateUnitTo=useCallback((unitId:string, targetLat:number, targetLng:number, folio:string)=>{
-    const entry=patrolsRef.current.get(unitId);
-    if(!entry||!mapInst.current) return;
-    const {marker,unit}=entry;
-    unit.status="Llamado activo";
-    const startLat=unit.lat, startLng=unit.lng;
-    const steps=20, interval=600;
-    let step=0;
-    const tid=setInterval(()=>{
-      step++;
-      const t=step/steps;
-      unit.lat=startLat+(targetLat-startLat)*t;
-      unit.lng=startLng+(targetLng-startLng)*t;
-      marker.setLatLng([unit.lat,unit.lng]);
-      if(step>=steps){
-        clearInterval(tid);
-        unit.status="En escena";
-        setUnitStatus("EN ESCENA");
-        const tm=nowStr();
-        setTraceLog(p=>[...p,{time:tm,event:`${unitId} · EN ESCENA · ${folio}`}]);
-        setActivity(p=>[{time:tm,color:"#00E676",msg:`${unitId} (${unit.label}) · EN ESCENA · ${folio}`},...p].slice(0,20));
-        playUnitArrival();
-        playProximityAlert();
-        speak(`Unidad ${unitId} ha llegado al lugar del evento. Folio ${folio}. Unidad en escena.`,"santi");
-        mapInst.current?.setView([targetLat,targetLng],15,{animate:true});
-        // Mark available after 15 min (simulated as 90s)
-        setTimeout(()=>{unit.status="Disponible"; setUnitStatus("CASO CERRADO");
-          const t2=nowStr();
-          setTraceLog(p=>[...p,{time:t2,event:`${unitId} · CASO CERRADO · ${folio}`}]);
-          setActivity(p=>[{time:t2,color:"#00E676",msg:`${unitId} · CASO CERRADO · ${folio} · Unidad disponible`},...p].slice(0,20));
-        },90000);
-      }
-    },interval);
-  },[speak]);
-
-  /* ── Add incident on map ── */
-  const addIncidentOnMap=useCallback((lat:number,lng:number,folio:string,tipo:string,color:string)=>{
-    if(!mapInst.current) return;
-    const c=L.circle([lat,lng],{color,fillColor:color,fillOpacity:.15,opacity:.55,weight:2,radius:120}).addTo(mapInst.current);
-    c.bindPopup(`<b style="color:${color}">${folio}</b><br>${tipo}<br><small>${nowStr()}</small>`).openPopup();
-    incidentMarkersRef.current.push(c);
-    mapInst.current.setView([lat,lng],15,{animate:true});
-  },[]);
-
   /* ── Send Report ── */
   const sendReport=useCallback(async()=>{
     if(reportListening){alert("Detén el dictado antes de registrar el reporte.");return;}
     if(!rtype){ alert("Selecciona el tipo de incidente."); return; }
-    if(!audioInit.current){ audioInit.current=true; }
     playNewReport();
-    const folio=genFolio(rtype);
+    const folio=genFolio();
     const agentId:AgentId=TYPE_AGENT[rtype]||"santi";
     const ag=AGENTS[agentId];
-    const colorMap:Record<string,string>={"Robo / Asalto":"#FF6D00","Violencia familiar":"#C13AFF","Narcomenudeo CJNG":"#FF1744","Extorsión / Gota a Gota":"#FF6D00","Disparos activos":"#FF1744","Desaparición":"#9C27B0","Vehículo sospechoso":"#00E5FF","Seguridad escolar":"#00E5FF","Homicidio / Ejecución":"#FF1744"};
-    const color=colorMap[rtype]||"#C8A84B";
-    const lat=18.8405+(Math.random()-.5)*.018;
-    const lng=-99.2328+(Math.random()-.5)*.022;
+    const sector=rSector.trim()||undefined;
+    const descripcion=rdesc.trim()||undefined;
     const tm=nowStr();
-    const unitId=getUnitForIncidentType(rtype);
-    const entry:FolioEntry={folio,tipo:rtype,agente:agentId,denunciante:rDenunciante||"S/D",cuadrante:rCuadrante||"CENTRO",horaEntrada:tm,lat,lng,status:"En proceso",unitAsigned:unitId};
+    const entry:FolioEntry={
+      folio,tipo:rtype,agente:agentId,sector:sector||"Sin especificar",horaEntrada:tm,
+      ...(selectedCoords ? {lat:selectedCoords.lat,lng:selectedCoords.lng} : {}),
+    };
     setCurrentFolio(entry);
-    setAssignedUnit(unitId);
-    setUnitStatus("NOTIFICADA");
     setTraceLog([
-      {time:tm,event:`${folio} · FOLIO GENERADO · ${ag.name} asignado`},
-      {time:tm,event:`${unitId} · NOTIFICADA · En camino`},
+      {time:tm,event:`${folio} · Borrador de demostración creado`},
+      {time:tm,event:"Resumen neutral pendiente; sin evaluación de riesgo ni despacho"},
     ]);
-    setFolioList(p=>[entry,...p].slice(0,30));
-    setStats(p=>({...p,reports:p.reports+1}));
-    addIncidentOnMap(lat,lng,folio,rtype,color);
-    setActivity(p=>[{time:tm,color,msg:`${folio} · ${rtype} · ${ag.name} · ${unitId} despachada`},...p].slice(0,20));
     setActiveTab("analysis");
     setAnalyzing(true);
-    speak(`${ag.name} procesando folio ${folio}. ${rtype} en ${rCuadrante||"sector centro"}. Análisis neuronal Gemini activado.`,agentId);
+    speak(`${ag.name} preparará un resumen de demostración para ${folio}. No se enviará una alerta ni se asignarán unidades.`,agentId);
+
+    let analysis:AnalysisResult={
+      agente:agentId,
+      analisis:"No se pudo generar un resumen en este momento. La información permanece sin verificar.",
+      nivelRiesgo:"NO EVALUADO",
+      accionesRecomendadas:[
+        "Esta es una demostración y no verifica los datos.",
+        "Ante una emergencia real, contacta directamente al 911 o a las autoridades competentes.",
+      ],
+      unidadesRequeridas:0,
+      protocolo:"No aplica — demostración",
+      coordinacion:"No se inició coordinación ni despacho real.",
+    };
+    try {
+      analysis=await analyzeIncident.mutateAsync({
+        data:{tipo:rtype,descripcion,sector,folio,agente:agentId},
+      });
+    } catch {
+      setTraceLog(previous=>[...previous,{time:nowStr(),event:"Resumen IA no disponible; se conserva como información no verificada"}]);
+    }
+    setAiAnalysis(analysis);
 
     try {
-      const analysis=await analyzeIncident.mutateAsync({ data:{tipo:rtype,descripcion:rdesc||undefined,sector:rCuadrante||"Temixco",folio,agente:agentId} });
-      setAiAnalysis(analysis);
-      createReport.mutate({data:{folio,tipo:rtype,descripcion:rdesc||undefined,sector:rCuadrante||"Temixco",latitud:lat,longitud:lng,agente:agentId,nivelRiesgo:analysis.nivelRiesgo,analisis:analysis.analisis}});
-      if(analysis.nivelRiesgo==="CRÍTICO"){ playCriticalAlert(); setStats(p=>({...p,critical:p.critical+1})); }
-      speak(analysis.analisis,agentId);
-      setActivity(p=>[{time:nowStr(),color:RISK_COLOR[analysis.nivelRiesgo]||"#C8A84B",msg:`GEMINI IA · ${folio} · Riesgo: ${analysis.nivelRiesgo} · ${analysis.protocolo}`},...p].slice(0,20));
-      // Animate unit
-      setTimeout(()=>{ animateUnitTo(unitId,lat,lng,folio); setUnitStatus("EN CAMINO"); setTraceLog(p=>[...p,{time:nowStr(),event:`${unitId} · EN CAMINO`}]); },3000);
-    } catch(e) {
-      speak(`Folio ${folio} registrado. ${ag.name} coordinando respuesta táctica. Unidad ${unitId} en camino.`,agentId);
-      setTimeout(()=>animateUnitTo(unitId,lat,lng,folio),3000);
-    } finally { setAnalyzing(false); }
-    setRtype(""); setRdesc(""); setRDenunciante(""); setRContacto(""); setRCuadrante(""); setRReportantes("1");
-  },[rtype,rdesc,rDenunciante,rContacto,rCuadrante,rReportantes,reportListening,speak,addIncidentOnMap,animateUnitTo,analyzeIncident,createReport]);
-
-  /* ── Secretary Alert ── */
-  const repSec=useCallback(()=>{
-    playCriticalAlert();
-    const folio=genFolio("Disparos activos")+"-CRÍTICO";
-    const tm=nowStr();
-    setActivity(p=>[{time:tm,color:"#FF1744",msg:`🚨 ${folio} · ALERTA MÁXIMA · Secretario notificado · TODAS LAS UNIDADES`},...p].slice(0,20));
-    setStats(p=>({...p,critical:p.critical+1}));
-    speak("ALERTA MÁXIMA activada. Canal directo con el Secretario de Seguridad abierto. Todas las unidades en estado de alerta máxima. Protocolo de respuesta extraordinaria activado en todos los sectores de Temixco.","santi");
-  },[speak]);
-
-  /* ── Vehicle Scan ── */
-  const scanVeh=useCallback(()=>{
-    if(!vehPlate.trim()){ alert("Ingresa una placa."); return; }
-    const pl=vehPlate.trim().toUpperCase();
-    const hits=Math.floor(Math.random()*6)+1;
-    const tipos=["Extorsión · Gota a Gota","Narcomenudeo","Robo a transeúnte","Cobro de piso","Portación de arma"];
-    const zonas=["Blvd. Juárez esq. Carr. 95","Periférico Norte","Col. Bugambilias","Acatlipa Centro"];
-    const tipo=tipos[Math.floor(Math.random()*tipos.length)];
-    const zona=zonas[Math.floor(Math.random()*zonas.length)];
-    setVehResult({plate:pl,hits,tipo,loc:zona});
-    const tm=nowStr();
-    setActivity(p=>[{time:tm,color:"#00E5FF",msg:`C2 · Placa ${pl} · ${hits} reportes · ${zona} · IA mejorada`},...p].slice(0,20));
-    if(mapInst.current){
-      const la=18.8405+(Math.random()-.5)*.018, ln=-99.2328+(Math.random()-.5)*.022;
-      L.marker([la,ln],{icon:L.divIcon({html:`<div style="background:#FF1744;color:#fff;font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 9px;border-radius:4px;white-space:nowrap;box-shadow:0 0 14px #FF1744;letter-spacing:1px">${pl}</div>`,className:"",iconSize:[100,20]})}).addTo(mapInst.current).bindPopup(`<b>${pl}</b><br>${tipo}<br>${hits} reportes C2`).openPopup();
-      mapInst.current.setView([la,ln],15,{animate:true});
+      await createReport.mutateAsync({data:{
+        folio,
+        tipo:rtype,
+        descripcion,
+        sector,
+        ...(selectedCoords ? {latitud:selectedCoords.lat,longitud:selectedCoords.lng} : {}),
+        agente:agentId,
+        nivelRiesgo:"NO EVALUADO",
+        analisis:analysis.analisis,
+      }});
+      setFolioList(previous=>[entry,...previous].slice(0,30));
+      setStats(previous=>({...previous,reports:previous.reports+1}));
+      setActivity(previous=>[{time:nowStr(),color:"#8AAAC8",msg:`${folio} · ${rtype} · guardado en demo; no verificado`},...previous].slice(0,20));
+      setTraceLog(previous=>[...previous,{time:nowStr(),event:"Registro guardado en la base de datos de demostración"},{time:nowStr(),event:"Sin notificación, despacho ni enlace institucional"}]);
+      speak(`El borrador ${folio} se guardó en la base de datos de demostración. No se envió a servicios oficiales.`,agentId);
+      setRtype("");
+      setRdesc("");
+      setRSector("");
+      setSelectedCoords(null);
+      setCoords("Haz clic en el mapa para elegir coordenadas (opcional)");
+      selectedLocationMarkerRef.current?.remove();
+      selectedLocationMarkerRef.current=null;
+    } catch {
+      setTraceLog(previous=>[...previous,{time:nowStr(),event:"No se pudo guardar en la base de datos de demostración"}]);
+      alert("No se pudo guardar el borrador en la demo. No se envió a autoridades ni servicios oficiales.");
+    } finally {
+      setAnalyzing(false);
     }
-    speak(`Sistema C2 identificó vehículo placa ${pl} con ${hits} reportes previos. Categoría: ${tipo}. Última ubicación: ${zona}. Unidad 07 notificada.`,"maxi");
-  },[vehPlate,speak]);
+  },[rtype,rdesc,rSector,selectedCoords,reportListening,speak,analyzeIncident,createReport]);
 
   const agC = (id:AgentId)=>AGENTS[id].color;
 
@@ -645,7 +458,13 @@ export default function SantiCommand() {
         </div>
       )}
       {chatAgent && <AgentChatModal agentId={chatAgent} onClose={()=>setChatAgent(null)} speak={speak} voiceEnabled={voiceEnabled} onToggleVoice={toggleVoice}/>}
-      {openModule && <ModuleModal moduleId={openModule} onClose={()=>setOpenModule(null)} speak={speak}/>}
+      {openModule && <DemoModuleDialog moduleId={openModule} onClose={()=>setOpenModule(null)}/>}
+      {panicDemoOpen && <PanicDemoDialog onClose={()=>setPanicDemoOpen(false)}/>}
+
+      <button type="button" onClick={()=>setPanicDemoOpen(true)} aria-label="Abrir simulación de Código Violeta"
+        style={{position:"fixed",right:18,bottom:18,zIndex:1200,border:"1px solid rgba(233,30,140,.72)",borderRadius:999,padding:"12px 16px",background:"rgba(43,8,32,.96)",color:"#FFD6E5",fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,letterSpacing:.5,boxShadow:"0 4px 20px rgba(0,0,0,.45)",cursor:"pointer"}}>
+        SIMULAR CÓDIGO VIOLETA
+      </button>
 
       <div style={{height:"100vh",display:"flex",flexDirection:"column"}}>
 
@@ -657,14 +476,24 @@ export default function SantiCommand() {
             <div style={{width:34,height:34,borderRadius:7,background:"linear-gradient(135deg,rgba(200,168,75,.15),rgba(10,79,212,.1))",border:"1px solid rgba(200,168,75,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🛡️</div>
             <div>
               <div style={{fontFamily:"'Orbitron',monospace",fontWeight:900,fontSize:13,letterSpacing:4,background:"linear-gradient(90deg,#C8A84B,#E2C46A)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>SANTI · C.M.O.</div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",letterSpacing:1.5,marginTop:1}}>SECRETARÍA SEG. PÚBLICA · TEMIXCO, MORELOS</div>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",letterSpacing:1.5,marginTop:1}}>DEMO · SIN ENLACE INSTITUCIONAL</div>
             </div>
           </div>
           {/* Divider */}
           <div style={{width:1,height:30,background:"rgba(200,168,75,.1)",flexShrink:0}}/>
-          {/* Stats */}
+          {/* Language selector */}
+          <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+            <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#7189A0"}}>IDIOMA</span>
+            <select aria-label="Idioma de la demostración" title="Náhuatl y Mixteco requieren traducción revisada por hablantes"
+              defaultValue="es" style={{maxWidth:150,background:"#071525",border:"1px solid rgba(200,168,75,.22)",borderRadius:6,padding:"5px 7px",color:"#C8D8E8",fontFamily:"'Share Tech Mono',monospace",fontSize:8}}>
+              <option value="es">Español</option>
+              <option value="nahuatl" disabled>Náhuatl · traducción pendiente</option>
+              <option value="mixteco" disabled>Mixteco · traducción pendiente</option>
+            </select>
+          </div>
+          {/* Connected-data summary */}
           <div style={{display:"flex",gap:14,alignItems:"center"}}>
-            {[{v:stats.units,l:"UNIDADES",c:"#00E676"},{v:stats.reports,l:"REPORTES",c:"#00E5FF"},{v:stats.critical,l:"ALERTAS",c:"#FF1744"},{v:"8m",l:"T.RESPUESTA",c:"#C8A84B"}].map(s=>(
+            {[{v:stats.units??"—",l:"UNIDADES CONECTADAS",c:"#00E676"},{v:stats.reports,l:"REGISTROS EN BD",c:"#00E5FF"},{v:"—",l:"RIESGO",c:"#AAB8C2"}].map(s=>(
               <div key={s.l} style={{textAlign:"center"}}>
                 <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:700,color:s.c,lineHeight:1}}>{s.v}</div>
                 <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:.5,marginTop:2}}>{s.l}</div>
@@ -673,14 +502,6 @@ export default function SantiCommand() {
           </div>
           {/* Spacer */}
           <div style={{flex:1}}/>
-          {/* Secretary phone */}
-          <div style={{display:"flex",alignItems:"center",gap:7,padding:"5px 12px",borderRadius:999,background:"rgba(255,23,68,.06)",border:"1px solid rgba(255,23,68,.18)"}}>
-            <span style={{fontSize:13}}>📞</span>
-            <div>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#FF1744",letterSpacing:.5}}>SECRETARIO SEG. PÚB.</div>
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#FF1744",letterSpacing:1}}>564-096-7363</div>
-            </div>
-          </div>
           <div style={{width:1,height:30,background:"rgba(200,168,75,.1)"}}/>
           {/* Clock */}
           <div style={{textAlign:"right",flexShrink:0}}>
@@ -690,7 +511,7 @@ export default function SantiCommand() {
           {/* Live indicator */}
           <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:999,background:"rgba(200,168,75,.08)",border:"1px solid rgba(200,168,75,.24)",flexShrink:0}}>
             <div style={{width:6,height:6,borderRadius:"50%",background:"#C8A84B"}}/>
-            <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#C8A84B",letterSpacing:1}}>SIMULACIÓN</span>
+            <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#C8A84B",letterSpacing:1}}>SIN SERVICIOS OFICIALES</span>
           </div>
         </header>
 
@@ -752,7 +573,7 @@ export default function SantiCommand() {
                       </div>
                       <div style={{fontSize:10,fontWeight:600,color:"#C8D8E8",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.tipo}</div>
                       <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",display:"flex",gap:8}}>
-                        <span>{f.horaEntrada}</span><span>{f.cuadrante}</span><span style={{color:ag.color}}>{f.unitAsigned}</span>
+                        <span>{f.horaEntrada}</span><span>{f.sector}</span>
                       </div>
                     </div>
                   );
@@ -768,7 +589,7 @@ export default function SantiCommand() {
             <div style={{flex:1,position:"relative",minHeight:0}}>
               {/* HUD */}
               <div style={{position:"absolute",top:10,left:10,display:"flex",gap:7,zIndex:400,pointerEvents:"all"}}>
-                {["📍 TEMIXCO","🔥 ZONAS CALOR","🚨 ALERTAS","🚔 PATRULLAS"].map(l=>(
+                {["📍 TEMIXCO · MAPA BASE","CAPAS OPERATIVAS: NINGUNA","UBICACIÓN: SELECCIÓN MANUAL"].map(l=>(
                   <div key={l} style={{padding:"4px 10px",borderRadius:999,background:"rgba(1,8,20,.88)",border:"1px solid rgba(200,168,75,.1)",fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#6A90B8",backdropFilter:"blur(8px)",letterSpacing:.5}}>
                     {l}
                   </div>
@@ -799,16 +620,9 @@ export default function SantiCommand() {
                           <option value="">Tipo de incidente *</option>
                           {CRIME_TYPES.map(t=><option key={t} value={t}>{t}</option>)}
                         </select>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                          <input className="rselect" value={rDenunciante} onChange={e=>setRDenunciante(e.target.value)} placeholder="Denunciante (S/D)"/>
-                          <input className="rselect" value={rContacto} onChange={e=>setRContacto(e.target.value)} placeholder="Teléfono (S/D)"/>
-                        </div>
-                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
-                          <select className="rselect" value={rCuadrante} onChange={e=>setRCuadrante(e.target.value)}>
-                            <option value="">Cuadrante...</option>
-                            {QUADRANTS.map(q=><option key={q} value={q}>{q}</option>)}
-                          </select>
-                          <input className="rselect" type="number" min="1" value={rReportantes} onChange={e=>setRReportantes(e.target.value)} placeholder="# Reportantes"/>
+                        <input className="rselect" value={rSector} onChange={e=>setRSector(e.target.value)} maxLength={120} placeholder="Sector o referencia general (opcional)"/>
+                        <div style={{fontSize:9,color:selectedCoords?"#77D7E7":"#7189A0",lineHeight:1.4}}>
+                          {selectedCoords?"Ubicación seleccionada manualmente en el mapa.":"Sin ubicación. Puedes elegir un punto en el mapa; no se usa GPS."}
                         </div>
                         <div style={{display:"flex",gap:5,alignItems:"stretch"}}>
                           <textarea className="rtexta" rows={2} style={{fontSize:12,flex:1,minWidth:0}} placeholder="Descripción ficticia para la demostración..." value={rdesc} onChange={e=>setRdesc(e.target.value)}/>
@@ -819,42 +633,29 @@ export default function SantiCommand() {
                         </div>
                         {reportVoiceError&&<div role="status" style={{fontSize:9,color:"#FF8C8C"}}>{reportVoiceError}</div>}
                         <div style={{fontSize:9,color:"#526A80",lineHeight:1.35}}>
-                          Demo: usa datos ficticios. Al registrar, el texto se guarda y se procesa con IA.
+                          Solo datos ficticios. Al registrar, el borrador y su descripción se guardan en la base de datos de esta demo y se envían a Gemini para un resumen neutral.
                         </div>
                         <button onClick={sendReport} disabled={analyzing||!rtype||reportListening}
                           style={{padding:"8px",background:analyzing?"rgba(200,168,75,.06)":"linear-gradient(135deg,#C8A84B,#8A6A20)",border:"none",borderRadius:6,cursor:analyzing||!rtype?"not-allowed":"pointer",fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,letterSpacing:1,color:analyzing?"#3A5A7A":"#000",transition:"all .2s",opacity:!rtype?.5:1}}>
-                          {analyzing?"⚡ ANALIZANDO CON GEMINI IA...":"⚡ REGISTRAR REPORTE"}
+                          {analyzing?"PROCESANDO DEMO...":"GUARDAR BORRADOR DEMO"}
                         </button>
                       </div>
                     </div>
                     <div style={{padding:"8px 12px",borderRight:"1px solid rgba(200,168,75,.08)"}}>
-                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>PROTOCOLO SEGÚN TIPO</div>
-                      {rtype ? (
-                        <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                          {(["Mantén la calma","Aléjate del área peligrosa","Espera en lugar seguro","El folio te identifica como denunciante","La unidad asignada está en camino"] as string[]).map((s,i)=>(
-                            <div key={i} style={{display:"flex",gap:7,padding:"5px 8px",background:"rgba(0,0,0,.3)",border:"1px solid rgba(200,168,75,.1)",borderRadius:6}}>
-                              <span style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#C8A84B",flexShrink:0}}>0{i+1}</span>
-                              <span style={{fontSize:10,fontWeight:600}}>{s}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ):<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#2A4A6A",marginTop:8}}>Selecciona un tipo de incidente</div>}
+                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>LÍMITES DE LA DEMO</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:7,fontSize:10,color:"#8AAAC8",lineHeight:1.45}}>
+                        <div>El tipo y la descripción son datos proporcionados por el usuario; no se verifican.</div>
+                        <div>El resumen de IA no determina riesgo, culpabilidad ni acciones.</div>
+                        <div>No se contactan autoridades ni se asignan unidades.</div>
+                      </div>
                     </div>
                     <div style={{padding:"8px 12px",overflowY:"auto"}}>
-                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>FOLIO POR DEPENDENCIA</div>
-                      <div style={{fontSize:10,color:"#6A90B8",lineHeight:1.8,fontFamily:"'Share Tech Mono',monospace"}}>
-                        <div><span style={{color:"#FF1744"}}>FGR-TMX-2026-XXXX</span> — Narco · Extorsión</div>
-                        <div><span style={{color:"#FF6D00"}}>SSPC-TMX-2026-XXXX</span> — Disparos · Homicidio</div>
-                        <div><span style={{color:"#9C27B0"}}>FGE-TMX-2026-XXXX</span> — Desaparición</div>
-                        <div><span style={{color:"#1E88E5"}}>MUN-TMX-2026-XXXX</span> — Municipal · Común</div>
-                      </div>
-                      <div style={{marginTop:10,fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1}}>UNIDAD POR TIPO</div>
-                      <div style={{marginTop:5,fontSize:10,color:"#6A90B8",lineHeight:1.8,fontFamily:"'Share Tech Mono',monospace"}}>
-                        {rtype&&<div style={{color:"#00E676",animation:"fade-up .3s ease"}}>→ {getUnitForIncidentType(rtype)} asignada a este tipo</div>}
-                        <div><span style={{color:"#1565C0"}}>U-01/03</span> — Municipal</div>
-                        <div><span style={{color:"#C8A84B"}}>U-07</span> — SSPC Morelos</div>
-                        <div><span style={{color:"#2E7D32"}}>U-11</span> — G. Nacional</div>
-                        <div><span style={{color:"#0D47A1"}}>U-14</span> — Marina</div>
+                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>REGISTRO DE DEMOSTRACIÓN</div>
+                      <div style={{fontSize:10,color:"#8AAAC8",lineHeight:1.6}}>
+                        <div>ID: <span style={{color:"#C8A84B"}}>SANTI-DEMO-…</span></div>
+                        <div>Conexión institucional: ninguna</div>
+                        <div>Unidades: no conectadas</div>
+                        <div>Evaluación de riesgo: no disponible</div>
                       </div>
                     </div>
                   </div>
@@ -906,40 +707,38 @@ export default function SantiCommand() {
                 {activeTab==="trace"&&(
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",height:"100%",gap:0}}>
                     <div style={{padding:"8px 14px",borderRight:"1px solid rgba(200,168,75,.08)",overflowY:"auto"}}>
-                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>TRAZABILIDAD DE UNIDAD</div>
-                      {currentFolio?(
-                        <div>
-                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:9,padding:"6px 9px",background:"rgba(0,0,0,.35)",borderRadius:7,border:"1px solid rgba(200,168,75,.12)"}}>
-                            <div style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:PATROL_UNITS_CONFIG.find(u=>u.id===assignedUnit)?.glowColor||"#C8A84B"}}>{assignedUnit}</div>
-                            <div style={{fontSize:10,color:"#6A90B8"}}>{PATROL_UNITS_CONFIG.find(u=>u.id===assignedUnit)?.label||"UNIDAD"}</div>
-                            <div style={{marginLeft:"auto",padding:"2px 7px",borderRadius:999,background:unitStatus==="EN ESCENA"?"rgba(0,230,118,.12)":unitStatus==="EN CAMINO"?"rgba(0,229,255,.1)":"rgba(200,168,75,.08)",border:`1px solid ${unitStatus==="EN ESCENA"?"rgba(0,230,118,.3)":unitStatus==="EN CAMINO"?"rgba(0,229,255,.25)":"rgba(200,168,75,.2)"}`,fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:unitStatus==="EN ESCENA"?"#00E676":unitStatus==="EN CAMINO"?"#00E5FF":"#C8A84B",letterSpacing:.5}}>
-                              {unitStatus||"NOTIFICADA"}
+                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>ACTIVIDAD DEL BORRADOR</div>
+                      {currentFolio&&traceLog.length ? (
+                        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                          {traceLog.map((t,i)=>(
+                            <div key={i} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:"1px solid rgba(200,168,75,.06)"}}>
+                              <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#7189A0",flexShrink:0}}>{t.time}</span>
+                              <span style={{fontSize:10,color:"#8AAAC8",lineHeight:1.4}}>{t.event}</span>
                             </div>
-                          </div>
-                          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                            {traceLog.map((t,i)=>(
-                              <div key={i} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:"1px solid rgba(200,168,75,.06)",animation:"slide-in .2s ease"}}>
-                                <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",flexShrink:0}}>{t.time}</span>
-                                <div style={{width:1,background:"rgba(200,168,75,.15)",flexShrink:0}}/>
-                                <span style={{fontSize:10,color:"#8AAAC8",lineHeight:1.4}}>{t.event}</span>
-                              </div>
-                            ))}
-                          </div>
+                          ))}
                         </div>
-                      ):<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#2A4A6A",marginTop:12}}>Sin incidente activo</div>}
+                      ):<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7189A0",marginTop:12}}>No hay actividad de demo para mostrar.</div>}
                     </div>
                     <div style={{padding:"8px 14px",overflowY:"auto"}}>
-                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>DATOS DEL REPORTE</div>
+                      <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:7}}>DATOS DEL BORRADOR</div>
                       {currentFolio?(
                         <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                          {[["Folio",currentFolio.folio],["Tipo",currentFolio.tipo],["Denunciante",currentFolio.denunciante],["Cuadrante",currentFolio.cuadrante],["Hora entrada",currentFolio.horaEntrada],["Agente IA",AGENTS[currentFolio.agente].name],["Unidad",currentFolio.unitAsigned]].map(([l,v])=>(
+                          {[
+                            ["ID",currentFolio.folio],
+                            ["Categoría",currentFolio.tipo],
+                            ["Sector",currentFolio.sector],
+                            ["Hora",currentFolio.horaEntrada],
+                            ["Ubicación",currentFolio.lat!==undefined&&currentFolio.lng!==undefined?`${currentFolio.lat.toFixed(5)}, ${currentFolio.lng.toFixed(5)}`:"No proporcionada"],
+                            ["Resumen",AGENTS[currentFolio.agente].name],
+                            ["Estado","No verificado · Demo"],
+                          ].map(([l,v])=>(
                             <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"4px 8px",background:"rgba(0,0,0,.3)",borderRadius:5,border:"1px solid rgba(200,168,75,.08)"}}>
                               <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A"}}>{l}</span>
                               <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#8AAAC8",fontWeight:600}}>{v}</span>
                             </div>
                           ))}
                         </div>
-                      ):<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#2A4A6A",marginTop:12}}>Registra un reporte para ver la trazabilidad</div>}
+                      ):<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7189A0",marginTop:12}}>Registra un borrador para ver sus datos.</div>}
                     </div>
                   </div>
                 )}
@@ -966,7 +765,7 @@ export default function SantiCommand() {
           <aside style={{display:"flex",flexDirection:"column",background:"rgba(1,8,20,.95)",borderLeft:"1px solid rgba(200,168,75,.08)",overflowY:"auto",scrollbarWidth:"thin"}}>
             {/* Stats */}
             <div style={{padding:"10px 12px",borderBottom:"1px solid rgba(200,168,75,.08)",display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,flexShrink:0}}>
-              {[{v:stats.units,l:"UNIDADES",c:"#00E676"},{v:stats.critical,l:"ALERTAS CRÍTICAS",c:"#FF1744"},{v:stats.reports,l:"REPORTES HOY",c:"#00E5FF"},{v:"89%",l:"ATENCIÓN",c:"#C8A84B"}].map(s=>(
+              {[{v:stats.units??"—",l:"UNIDADES CONECTADAS",c:"#00E676"},{v:stats.reports,l:"REGISTROS EN BD",c:"#00E5FF"},{v:"—",l:"RIESGO",c:"#AAB8C2"},{v:"—",l:"RESPUESTA",c:"#C8A84B"}].map(s=>(
                 <div key={s.l} style={{background:"rgba(4,22,40,.5)",border:"1px solid rgba(200,168,75,.1)",borderRadius:9,padding:"9px 10px",textAlign:"center",position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:s.c,opacity:.35}}/>
                   <div style={{fontFamily:"'Orbitron',monospace",fontSize:18,fontWeight:900,color:s.c,lineHeight:1}}>{s.v}</div>
@@ -975,69 +774,25 @@ export default function SantiCommand() {
               ))}
             </div>
 
-            {/* Tactical modules */}
+            {/* Local demo modules */}
             <div style={{padding:"10px 12px",borderBottom:"1px solid rgba(200,168,75,.08)",flexShrink:0}}>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:2,marginBottom:8}}>MÓDULOS TÁCTICOS</div>
-              {[
-                {id:"mujer",  c:"#E91E8C",ico:"🦋",t:"CÓDIGO VIOLETA",  d:"Protocolo AVG · Género",       badge:"FEDERAL"},
-                {id:"extorsion",c:"#FF6D00",ico:"🔒",t:"ANTIEXTORSIÓN",  d:"Gota a Gota · Cobro de piso",  badge:"FEDERAL"},
-                {id:"escuela",c:"#00E5FF",ico:"🏫",t:"ESCUELA SEGURA",  d:"Perímetros · Cuadrantes",       badge:"COMÚN"},
-                {id:"desaparicion",c:"#00897B",ico:"🔍",t:"DESAPARICIÓN",d:"Protocolo Alba · AVG",          badge:"FEDERAL"},
-                {id:"narco",  c:"#C8A84B",ico:"🎯",t:"NARCOMENUDEO",   d:"CJNG · Denuncia anónima",       badge:"FEDERAL"},
-              ].map(m=>(
-                <button key={m.id} className="mod-btn" onClick={()=>setOpenModule(m.id)}>
+              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:2,marginBottom:8}}>FORMULARIOS LOCALES · DEMO</div>
+              {(Object.entries(DEMO_MODULES) as [DemoModuleId,typeof DEMO_MODULES[DemoModuleId]][]).map(([id,m])=>(
+                <button key={id} className="mod-btn" onClick={()=>setOpenModule(id)}>
                   <div className="mod-inner">
-                    <div style={{width:36,height:36,borderRadius:8,background:`${m.c}12`,border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{m.ico}</div>
+                    <div style={{width:36,height:36,borderRadius:8,background:`${m.color}12`,border:"1px solid rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{m.icon}</div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,color:m.c,letterSpacing:.3,marginBottom:2}}>{m.t}</div>
-                      <div style={{fontSize:9,color:"#2A4A6A",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.d}</div>
+                      <div style={{fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,color:m.color,letterSpacing:.3,marginBottom:2}}>{m.title}</div>
+                      <div style={{fontSize:9,color:"#2A4A6A",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.category}</div>
                     </div>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,padding:"1px 5px",borderRadius:999,background:m.badge==="FEDERAL"?"rgba(255,23,68,.1)":"rgba(200,168,75,.08)",color:m.badge==="FEDERAL"?"#FF1744":"#C8A84B",border:`1px solid ${m.badge==="FEDERAL"?"rgba(255,23,68,.22)":"rgba(200,168,75,.18)"}`,flexShrink:0}}>{m.badge}</span>
+                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,padding:"1px 5px",borderRadius:999,background:"rgba(200,168,75,.08)",color:"#C8A84B",border:"1px solid rgba(200,168,75,.18)",flexShrink:0}}>DEMO</span>
                   </div>
                 </button>
               ))}
-              {/* Secretary button */}
-              <button onClick={repSec} style={{width:"100%",padding:"11px 12px",border:"1px solid rgba(255,23,68,.35)",borderRadius:10,cursor:"pointer",background:"linear-gradient(135deg,rgba(255,23,68,.12),rgba(120,0,20,.08))",fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:900,letterSpacing:1.5,color:"#FF6D6D",position:"relative",overflow:"hidden",animation:"sec-pulse 2.5s ease-in-out infinite",transition:"all .25s",marginBottom:8}}>
-                <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,transparent,rgba(255,23,68,.07),transparent)",animation:"scan-line 2.5s ease-in-out infinite"}}/>
-                🚨 ALERTA SECRETARIO
-              </button>
             </div>
 
-            {/* Vehicle scan */}
-            <div style={{padding:"10px 12px"}}>
-              <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:2,marginBottom:7}}>RECONOCIMIENTO VEHICULAR · C2</div>
-              <div style={{display:"flex",gap:5,marginBottom:6}}>
-                <input value={vehPlate} onChange={e=>setVehPlate(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&scanVeh()}
-                  placeholder="PLACA..."
-                  style={{flex:1,background:"rgba(0,0,0,.4)",border:"1px solid rgba(0,229,255,.15)",borderRadius:6,padding:"6px 10px",color:"#C8D8E8",fontFamily:"'Share Tech Mono',monospace",fontSize:11,letterSpacing:2,textTransform:"uppercase",outline:"none"}}/>
-                <button onClick={scanVeh} style={{padding:"6px 10px",background:"rgba(0,229,255,.07)",border:"1px solid rgba(0,229,255,.22)",borderRadius:6,color:"#00E5FF",fontFamily:"'Orbitron',monospace",fontSize:8,fontWeight:700,cursor:"pointer",letterSpacing:.5}}>
-                  SCAN
-                </button>
-              </div>
-              {vehResult&&(
-                <div style={{padding:"9px 10px",background:"rgba(255,23,68,.05)",border:"1px solid rgba(255,23,68,.18)",borderRadius:8,animation:"fade-up .3s ease"}}>
-                  <div style={{fontFamily:"'Orbitron',monospace",fontSize:14,fontWeight:900,color:"#FF1744",letterSpacing:3,marginBottom:4}}>{vehResult.plate}</div>
-                  <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#6A90B8",lineHeight:1.6}}>
-                    <div>Reportes: <span style={{color:"#FF1744",fontWeight:700}}>{vehResult.hits}</span></div>
-                    <div>Tipo: {vehResult.tipo}</div>
-                    <div>Últ. ubicación: {vehResult.loc}</div>
-                    <div style={{color:"#00E5FF",marginTop:3}}>C2 VERIFICADO · IA MEJORADA · 94%</div>
-                  </div>
-                </div>
-              )}
-              {/* Unit legend */}
-              <div style={{marginTop:10,borderTop:"1px solid rgba(200,168,75,.08)",paddingTop:8}}>
-                <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:6}}>LEYENDA DE UNIDADES</div>
-                {PATROL_UNITS_CONFIG.map(u=>(
-                  <div key={u.id} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
-                    <div style={{width:8,height:8,borderRadius:2,background:u.color,boxShadow:`0 0 4px ${u.glowColor}`,flexShrink:0}}/>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#C8A84B",minWidth:28}}>{u.id}</span>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A"}}>{u.label}</span>
-                    <span style={{marginLeft:"auto",fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:u.status==="En escena"?"#00E676":u.status==="Llamado activo"?"#FF1744":"#3A5A7A"}}>{u.status}</span>
-                  </div>
-                ))}
-              </div>
+            <div style={{margin:"10px 12px",padding:10,background:"rgba(0,0,0,.22)",border:"1px solid rgba(200,168,75,.1)",borderRadius:8,color:"#7189A0",fontSize:10,lineHeight:1.5}}>
+              No hay consultas de placas, unidades, geolocalización automática ni servicios oficiales conectados.
             </div>
           </aside>
         </div>

@@ -30,7 +30,7 @@ const voiceProfiles: Record<string, AgentVoiceProfile> = {
   katering: { gender: "feminine", rate: 0.92, pitch: 1.12 },
 };
 
-const feminineVoiceNames = /female|woman|femenina|mujer|paulina|monica|sabina|helena|lucia|lucía/i;
+const feminineVoiceNames = /female|woman|femenina|mujer|google.*español|español.*google|paulina|m[oó]nica|sabina|helena|luc[ií]a/i;
 const masculineVoiceNames = /male|man|masculino|hombre|jorge|diego|carlos|antonio|juan/i;
 
 function chooseSpanishVoice(
@@ -41,7 +41,12 @@ function chooseSpanishVoice(
   const candidates = spanishVoices.length > 0 ? spanishVoices : voices;
   const namePattern = gender === "feminine" ? feminineVoiceNames : masculineVoiceNames;
 
-  return candidates.find((voice) => namePattern.test(voice.name)) ?? candidates[0];
+  const genderMatch = candidates.find((voice) => namePattern.test(voice.name));
+  if (genderMatch) return genderMatch;
+  if (gender === "feminine") {
+    return candidates.find((voice) => voice.lang.toLowerCase() === "es-mx") ?? candidates[0];
+  }
+  return candidates[0];
 }
 
 export function speakAsAgent(
@@ -59,7 +64,7 @@ export function speakAsAgent(
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "es-MX";
   utterance.rate = profile.rate;
-  utterance.pitch = profile.pitch;
+  utterance.pitch = agentId === "katering" ? 1.2 : profile.pitch;
   utterance.voice = chooseSpanishVoice(window.speechSynthesis.getVoices(), profile.gender) ?? null;
   utterance.onend = onEnd;
   utterance.onerror = onEnd;

@@ -17,20 +17,20 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  AnalyzeIncidentBody,
-  CreateGeminiConversationBody,
-  CreateReportBody,
   GeminiConversation,
+  GeminiConversationInput,
   GeminiConversationWithMessages,
   GeminiError,
+  GeminiImageInput,
+  GeminiImageResult,
   GeminiMessage,
-  GenerateGeminiImageBody,
-  GenerateGeminiImageResponse,
+  GeminiMessageInput,
   HealthStatus,
   IncidentAnalysis,
+  IncidentAnalysisInput,
   IncidentReport,
+  IncidentReportInput,
   OperationalStats,
-  SendGeminiMessageBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -126,14 +126,14 @@ export const getAnalyzeIncidentUrl = () => {
 };
 
 export const analyzeIncident = async (
-  analyzeIncidentBody: AnalyzeIncidentBody,
+  incidentAnalysisInput: IncidentAnalysisInput,
   options?: RequestInit,
 ): Promise<IncidentAnalysis> => {
   return customFetch<IncidentAnalysis>(getAnalyzeIncidentUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(analyzeIncidentBody),
+    body: JSON.stringify(incidentAnalysisInput),
   });
 };
 
@@ -144,14 +144,14 @@ export const getAnalyzeIncidentMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof analyzeIncident>>,
     TError,
-    { data: BodyType<AnalyzeIncidentBody> },
+    { data: BodyType<IncidentAnalysisInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof analyzeIncident>>,
   TError,
-  { data: BodyType<AnalyzeIncidentBody> },
+  { data: BodyType<IncidentAnalysisInput> },
   TContext
 > => {
   const mutationKey = ["analyzeIncident"];
@@ -165,7 +165,7 @@ export const getAnalyzeIncidentMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof analyzeIncident>>,
-    { data: BodyType<AnalyzeIncidentBody> }
+    { data: BodyType<IncidentAnalysisInput> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -178,7 +178,7 @@ export const getAnalyzeIncidentMutationOptions = <
 export type AnalyzeIncidentMutationResult = NonNullable<
   Awaited<ReturnType<typeof analyzeIncident>>
 >;
-export type AnalyzeIncidentMutationBody = BodyType<AnalyzeIncidentBody>;
+export type AnalyzeIncidentMutationBody = BodyType<IncidentAnalysisInput>;
 export type AnalyzeIncidentMutationError = ErrorType<unknown>;
 
 /**
@@ -191,14 +191,14 @@ export const useAnalyzeIncident = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof analyzeIncident>>,
     TError,
-    { data: BodyType<AnalyzeIncidentBody> },
+    { data: BodyType<IncidentAnalysisInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof analyzeIncident>>,
   TError,
-  { data: BodyType<AnalyzeIncidentBody> },
+  { data: BodyType<IncidentAnalysisInput> },
   TContext
 > => {
   return useMutation(getAnalyzeIncidentMutationOptions(options));
@@ -287,14 +287,14 @@ export const getCreateReportUrl = () => {
 };
 
 export const createReport = async (
-  createReportBody: CreateReportBody,
+  incidentReportInput: IncidentReportInput,
   options?: RequestInit,
 ): Promise<IncidentReport> => {
   return customFetch<IncidentReport>(getCreateReportUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createReportBody),
+    body: JSON.stringify(incidentReportInput),
   });
 };
 
@@ -305,14 +305,14 @@ export const getCreateReportMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createReport>>,
     TError,
-    { data: BodyType<CreateReportBody> },
+    { data: BodyType<IncidentReportInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createReport>>,
   TError,
-  { data: BodyType<CreateReportBody> },
+  { data: BodyType<IncidentReportInput> },
   TContext
 > => {
   const mutationKey = ["createReport"];
@@ -326,7 +326,7 @@ export const getCreateReportMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createReport>>,
-    { data: BodyType<CreateReportBody> }
+    { data: BodyType<IncidentReportInput> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -339,7 +339,7 @@ export const getCreateReportMutationOptions = <
 export type CreateReportMutationResult = NonNullable<
   Awaited<ReturnType<typeof createReport>>
 >;
-export type CreateReportMutationBody = BodyType<CreateReportBody>;
+export type CreateReportMutationBody = BodyType<IncidentReportInput>;
 export type CreateReportMutationError = ErrorType<unknown>;
 
 /**
@@ -352,14 +352,14 @@ export const useCreateReport = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createReport>>,
     TError,
-    { data: BodyType<CreateReportBody> },
+    { data: BodyType<IncidentReportInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof createReport>>,
   TError,
-  { data: BodyType<CreateReportBody> },
+  { data: BodyType<IncidentReportInput> },
   TContext
 > => {
   return useMutation(getCreateReportMutationOptions(options));
@@ -516,14 +516,14 @@ export const getCreateGeminiConversationUrl = () => {
 };
 
 export const createGeminiConversation = async (
-  createGeminiConversationBody: CreateGeminiConversationBody,
+  geminiConversationInput: GeminiConversationInput,
   options?: RequestInit,
 ): Promise<GeminiConversation> => {
   return customFetch<GeminiConversation>(getCreateGeminiConversationUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createGeminiConversationBody),
+    body: JSON.stringify(geminiConversationInput),
   });
 };
 
@@ -534,14 +534,14 @@ export const getCreateGeminiConversationMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createGeminiConversation>>,
     TError,
-    { data: BodyType<CreateGeminiConversationBody> },
+    { data: BodyType<GeminiConversationInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createGeminiConversation>>,
   TError,
-  { data: BodyType<CreateGeminiConversationBody> },
+  { data: BodyType<GeminiConversationInput> },
   TContext
 > => {
   const mutationKey = ["createGeminiConversation"];
@@ -555,7 +555,7 @@ export const getCreateGeminiConversationMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createGeminiConversation>>,
-    { data: BodyType<CreateGeminiConversationBody> }
+    { data: BodyType<GeminiConversationInput> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -569,7 +569,7 @@ export type CreateGeminiConversationMutationResult = NonNullable<
   Awaited<ReturnType<typeof createGeminiConversation>>
 >;
 export type CreateGeminiConversationMutationBody =
-  BodyType<CreateGeminiConversationBody>;
+  BodyType<GeminiConversationInput>;
 export type CreateGeminiConversationMutationError = ErrorType<unknown>;
 
 /**
@@ -582,14 +582,14 @@ export const useCreateGeminiConversation = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createGeminiConversation>>,
     TError,
-    { data: BodyType<CreateGeminiConversationBody> },
+    { data: BodyType<GeminiConversationInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof createGeminiConversation>>,
   TError,
-  { data: BodyType<CreateGeminiConversationBody> },
+  { data: BodyType<GeminiConversationInput> },
   TContext
 > => {
   return useMutation(getCreateGeminiConversationMutationOptions(options));
@@ -866,14 +866,14 @@ export const getSendGeminiMessageUrl = (id: number) => {
 
 export const sendGeminiMessage = async (
   id: number,
-  sendGeminiMessageBody: SendGeminiMessageBody,
+  geminiMessageInput: GeminiMessageInput,
   options?: RequestInit,
 ): Promise<unknown> => {
   return customFetch<unknown>(getSendGeminiMessageUrl(id), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(sendGeminiMessageBody),
+    body: JSON.stringify(geminiMessageInput),
   });
 };
 
@@ -884,14 +884,14 @@ export const getSendGeminiMessageMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof sendGeminiMessage>>,
     TError,
-    { id: number; data: BodyType<SendGeminiMessageBody> },
+    { id: number; data: BodyType<GeminiMessageInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof sendGeminiMessage>>,
   TError,
-  { id: number; data: BodyType<SendGeminiMessageBody> },
+  { id: number; data: BodyType<GeminiMessageInput> },
   TContext
 > => {
   const mutationKey = ["sendGeminiMessage"];
@@ -905,7 +905,7 @@ export const getSendGeminiMessageMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof sendGeminiMessage>>,
-    { id: number; data: BodyType<SendGeminiMessageBody> }
+    { id: number; data: BodyType<GeminiMessageInput> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -918,7 +918,7 @@ export const getSendGeminiMessageMutationOptions = <
 export type SendGeminiMessageMutationResult = NonNullable<
   Awaited<ReturnType<typeof sendGeminiMessage>>
 >;
-export type SendGeminiMessageMutationBody = BodyType<SendGeminiMessageBody>;
+export type SendGeminiMessageMutationBody = BodyType<GeminiMessageInput>;
 export type SendGeminiMessageMutationError = ErrorType<unknown>;
 
 /**
@@ -931,14 +931,14 @@ export const useSendGeminiMessage = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof sendGeminiMessage>>,
     TError,
-    { id: number; data: BodyType<SendGeminiMessageBody> },
+    { id: number; data: BodyType<GeminiMessageInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof sendGeminiMessage>>,
   TError,
-  { id: number; data: BodyType<SendGeminiMessageBody> },
+  { id: number; data: BodyType<GeminiMessageInput> },
   TContext
 > => {
   return useMutation(getSendGeminiMessageMutationOptions(options));
@@ -952,14 +952,14 @@ export const getGenerateGeminiImageUrl = () => {
 };
 
 export const generateGeminiImage = async (
-  generateGeminiImageBody: GenerateGeminiImageBody,
+  geminiImageInput: GeminiImageInput,
   options?: RequestInit,
-): Promise<GenerateGeminiImageResponse> => {
-  return customFetch<GenerateGeminiImageResponse>(getGenerateGeminiImageUrl(), {
+): Promise<GeminiImageResult> => {
+  return customFetch<GeminiImageResult>(getGenerateGeminiImageUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(generateGeminiImageBody),
+    body: JSON.stringify(geminiImageInput),
   });
 };
 
@@ -970,14 +970,14 @@ export const getGenerateGeminiImageMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof generateGeminiImage>>,
     TError,
-    { data: BodyType<GenerateGeminiImageBody> },
+    { data: BodyType<GeminiImageInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof generateGeminiImage>>,
   TError,
-  { data: BodyType<GenerateGeminiImageBody> },
+  { data: BodyType<GeminiImageInput> },
   TContext
 > => {
   const mutationKey = ["generateGeminiImage"];
@@ -991,7 +991,7 @@ export const getGenerateGeminiImageMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof generateGeminiImage>>,
-    { data: BodyType<GenerateGeminiImageBody> }
+    { data: BodyType<GeminiImageInput> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -1004,7 +1004,7 @@ export const getGenerateGeminiImageMutationOptions = <
 export type GenerateGeminiImageMutationResult = NonNullable<
   Awaited<ReturnType<typeof generateGeminiImage>>
 >;
-export type GenerateGeminiImageMutationBody = BodyType<GenerateGeminiImageBody>;
+export type GenerateGeminiImageMutationBody = BodyType<GeminiImageInput>;
 export type GenerateGeminiImageMutationError = ErrorType<unknown>;
 
 /**
@@ -1017,14 +1017,14 @@ export const useGenerateGeminiImage = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof generateGeminiImage>>,
     TError,
-    { data: BodyType<GenerateGeminiImageBody> },
+    { data: BodyType<GeminiImageInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof generateGeminiImage>>,
   TError,
-  { data: BodyType<GenerateGeminiImageBody> },
+  { data: BodyType<GeminiImageInput> },
   TContext
 > => {
   return useMutation(getGenerateGeminiImageMutationOptions(options));

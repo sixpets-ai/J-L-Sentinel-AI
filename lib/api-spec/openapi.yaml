@@ -39,7 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AnalyzeIncidentBody"
+              $ref: "#/components/schemas/IncidentAnalysisInput"
       responses:
         "200":
           description: AI tactical analysis
@@ -71,7 +71,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateReportBody"
+              $ref: "#/components/schemas/IncidentReportInput"
       responses:
         "201":
           description: Created report
@@ -116,7 +116,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateGeminiConversationBody"
+              $ref: "#/components/schemas/GeminiConversationInput"
       responses:
         "201":
           description: Created conversation
@@ -202,7 +202,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SendGeminiMessageBody"
+              $ref: "#/components/schemas/GeminiMessageInput"
       responses:
         "200":
           description: SSE stream of assistant response chunks
@@ -218,14 +218,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GenerateGeminiImageBody"
+              $ref: "#/components/schemas/GeminiImageInput"
       responses:
         "200":
           description: Generated image data
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GenerateGeminiImageResponse"
+                $ref: "#/components/schemas/GeminiImageResult"
 
 components:
   schemas:
@@ -237,7 +237,7 @@ components:
       required:
         - status
 
-    AnalyzeIncidentBody:
+    IncidentAnalysisInput:
       type: object
       properties:
         tipo:
@@ -318,7 +318,7 @@ components:
         - agente
         - createdAt
 
-    CreateReportBody:
+    IncidentReportInput:
       type: object
       properties:
         folio:
@@ -352,13 +352,13 @@ components:
         criticalAlerts:
           type: integer
         activeUnits:
-          type: integer
+          type: ["integer", "null"]
         resolvedToday:
-          type: integer
+          type: ["integer", "null"]
         avgResponseMinutes:
-          type: number
+          type: ["number", "null"]
         topIncidentType:
-          type: string
+          type: ["string", "null"]
         recentActivity:
           type: array
           items:
@@ -420,14 +420,14 @@ components:
         - role
         - content
         - createdAt
-    CreateGeminiConversationBody:
+    GeminiConversationInput:
       type: object
       properties:
         title:
           type: string
       required:
         - title
-    SendGeminiMessageBody:
+    GeminiMessageInput:
       type: object
       properties:
         content:
@@ -453,14 +453,14 @@ components:
         - title
         - createdAt
         - messages
-    GenerateGeminiImageBody:
+    GeminiImageInput:
       type: object
       properties:
         prompt:
           type: string
       required:
         - prompt
-    GenerateGeminiImageResponse:
+    GeminiImageResult:
       type: object
       properties:
         b64_json:

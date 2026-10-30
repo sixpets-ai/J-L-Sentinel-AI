@@ -9,7 +9,7 @@ export interface HealthStatus {
   status: string;
 }
 
-export interface AnalyzeIncidentBody {
+export interface IncidentAnalysisInput {
   tipo: string;
   descripcion?: string;
   sector?: string;
@@ -42,7 +42,7 @@ export interface IncidentReport {
   createdAt: string;
 }
 
-export interface CreateReportBody {
+export interface IncidentReportInput {
   folio: string;
   tipo: string;
   descripcion?: string;
@@ -63,10 +63,14 @@ export interface ActivityItem {
 export interface OperationalStats {
   totalReports: number;
   criticalAlerts: number;
-  activeUnits: number;
-  resolvedToday: number;
-  avgResponseMinutes: number;
-  topIncidentType: string;
+  /** @nullable */
+  activeUnits: number | null;
+  /** @nullable */
+  resolvedToday: number | null;
+  /** @nullable */
+  avgResponseMinutes: number | null;
+  /** @nullable */
+  topIncidentType: string | null;
   recentActivity: ActivityItem[];
 }
 
@@ -84,11 +88,11 @@ export interface GeminiMessage {
   createdAt: string;
 }
 
-export interface CreateGeminiConversationBody {
+export interface GeminiConversationInput {
   title: string;
 }
 
-export interface SendGeminiMessageBody {
+export interface GeminiMessageInput {
   content: string;
 }
 
@@ -99,11 +103,11 @@ export interface GeminiConversationWithMessages {
   messages: GeminiMessage[];
 }
 
-export interface GenerateGeminiImageBody {
+export interface GeminiImageInput {
   prompt: string;
 }
 
-export interface GenerateGeminiImageResponse {
+export interface GeminiImageResult {
   b64_json: string;
   mimeType: string;
 }
