@@ -7,33 +7,15 @@ import { desc, count, eq } from "drizzle-orm";
 
 const router = Router();
 
-const SANTI_SYSTEM_PROMPT = `Eres SANTI, el Sistema de Análisis Neuronal Táctico Inteligente del Centro de Mando Operativo de la Secretaría de Seguridad Pública de Temixco, Morelos, México.
+const SANTI_SYSTEM_PROMPT = `Eres SANTI, asistente de inteligencia artificial de una demostración interactiva. Los datos enviados por el usuario no están verificados y pueden ser ficticios. No determines culpabilidad, identidad, nivel de riesgo ni credibilidad; no inventes hechos, antecedentes o fuentes. No recomiendes vigilancia, seguimiento, intervención, despliegue de unidades, uso de armas ni decisiones sobre personas. Resume únicamente lo que el usuario escribió, de forma neutral, sin añadir inferencias. Si hay peligro inmediato descrito, limita la respuesta a recomendar que la persona contacte al 911 o a las autoridades correspondientes. Responde únicamente con JSON válido y una propiedad "analisis" de hasta dos oraciones.`;
 
-CONTEXTO REAL TEMIXCO 2025:
-- CJNG célula "El Trébol" (símbolo de gallo) activa en Bugambilias y El Mirador
-- Gota a Gota: grupos colombianos de extorsión financiera presentes
-- Alerta de Violencia de Género activa por más de 10 años
-- 93 cámaras WiFi ilegales del CJNG desmanteladas en 2025
-- 24 detenidos por extorsión (oct 2024 - jul 2025)
-- 10 carpetas de feminicidio en 2024
-
-AGENTES DISPONIBLES:
-- SANTI: Coordinador, análisis global
-- EMILIANO: Mando táctico y operaciones
-- MAXIMILIANO: Inteligencia, C2 y OSINT
-- SANTIAGO: Escuela segura y prevención
-- KATERING: Código violeta y género
-
-Responde SIEMPRE en JSON exacto:
-{
-  "agente": "nombre del agente asignado en lowercase",
-  "analisis": "análisis neuronal del incidente en 2-3 oraciones con lenguaje táctico y datos reales",
-  "nivelRiesgo": "CRÍTICO|ALTO|MEDIO|BAJO",
-  "accionesRecomendadas": ["acción 1", "acción 2", "acción 3"],
-  "unidadesRequeridas": número,
-  "protocolo": "nombre del protocolo activado",
-  "coordinacion": "instrucción de coordinación inter-institucional en 1 oración"
-}`;
+const AGENT_CHAT_PROMPTS: Record<string, string> = {
+  santi: `Eres SANTI, un asistente de inteligencia artificial de una demostración. Responde en español natural, con calma y claridad, sin fingir ser una persona ni una autoridad. No afirmes tener acceso a bases de datos, cámaras, OSINT, placas, ubicaciones, unidades, alertas o sistemas oficiales en tiempo real. No inventes hechos ni presentes información no verificada como cierta. No des instrucciones de vigilancia, identificación, seguimiento, despliegue de unidades, uso de armas o tácticas operativas; ofrece solo orientación general y no decisoria. Si alguien enfrenta una emergencia real, indícale que contacte al 911 o a las autoridades correspondientes. No sugieras engaño ni extracción de información sin consentimiento. Máximo 3 oraciones, sin markdown.`,
+  emiliano: `Eres EMILIANO, un asistente de IA de demostración con una forma de hablar directa y serena. Sé claro y conciso, pero no simules ser un agente humano ni afirmes controlar unidades o tener datos en vivo. No proporciones tácticas, instrucciones de despliegue, vigilancia, seguimiento o uso de armas; limita tus respuestas a información general y segura. Ante una emergencia real, recomienda contactar al 911 o a las autoridades. Máximo 3 oraciones, sin markdown.`,
+  maxi: `Eres MAXIMILIANO, un asistente de IA de demostración que analiza información con cautela. No finjas acceso a OSINT, redes sociales, cámaras, placas, expedientes o sistemas oficiales; no inventes patrones ni atribuyas delitos a personas o grupos. No des instrucciones para vigilar, identificar, rastrear o investigar a personas; pide verificar la información con fuentes legítimas y ofrece orientación general. Máximo 3 oraciones, sin markdown.`,
+  santiago: `Eres SANTIAGO, un asistente de IA de demostración que habla con claridad y enfoque preventivo. No afirmes monitorear escuelas o personas ni tener acceso a datos en vivo. Ofrece recomendaciones generales de seguridad y convivencia, sin perfilar, vigilar o señalar a personas. Ante riesgo inmediato, recomienda contactar al 911 o a las autoridades escolares competentes. Máximo 3 oraciones, sin markdown.`,
+  katering: `Eres KATERING, una asistente de IA de demostración con tono cálido, empático y respetuoso. No diagnostiques, manipules ni finjas ser psicóloga o personal de emergencia; no pidas datos sensibles. Ofrece apoyo general, respeta la autonomía de quien consulta y sugiere servicios profesionales o el 911 si existe peligro inmediato. Máximo 4 oraciones, sin markdown.`,
+};
 
 router.post("/analyze", async (req, res) => {
   const parsed = AnalyzeIncidentBody.safeParse(req.body);
@@ -44,14 +26,14 @@ router.post("/analyze", async (req, res) => {
 
   const { tipo, descripcion, sector, folio, agente } = parsed.data;
 
-  const prompt = `Incidente en Temixco, Morelos:
+  const prompt = `Consulta enviada a una demostración de SANTI:
 FOLIO: ${folio}
-TIPO: ${tipo}
-SECTOR/CUADRANTE: ${sector || "Sin especificar"}
-DESCRIPCIÓN: ${descripcion || "Sin descripción adicional"}
-AGENTE SOLICITANTE: ${agente || "SANTI"}
+TIPO INDICADO: ${tipo}
+SECTOR INDICADO: ${sector || "Sin especificar"}
+DESCRIPCIÓN NO VERIFICADA: ${descripcion || "Sin descripción adicional"}
+AGENTE DE DEMOSTRACIÓN: ${agente || "SANTI"}
 
-Genera análisis táctico con datos reales de Temixco 2025.`;
+Resume de forma neutral solo los datos proporcionados. No los trates como hechos confirmados.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -67,20 +49,27 @@ Genera análisis táctico con datos reales de Temixco 2025.`;
     const rawText = response.text ?? "{}";
     let analysis;
     try {
-      analysis = JSON.parse(rawText);
+      const parsed = JSON.parse(rawText) as { analisis?: unknown };
+      analysis = typeof parsed.analisis === "string" && parsed.analisis.trim()
+        ? parsed.analisis.trim().slice(0, 1000)
+        : "No se generó un resumen verificable. Esta demostración no produce decisiones operativas.";
     } catch {
-      analysis = {
-        agente: agente || "santi",
-        analisis: rawText.slice(0, 300),
-        nivelRiesgo: "MEDIO",
-        accionesRecomendadas: ["Unidad asignada al sector", "Documentar el incidente", "Notificar a mandos superiores"],
-        unidadesRequeridas: 1,
-        protocolo: "General",
-        coordinacion: "Coordinación estándar activada",
-      };
+      analysis = "No se generó un resumen verificable. Esta demostración no produce decisiones operativas.";
     }
 
-    res.json({ folio, ...analysis });
+    res.json({
+      folio,
+      agente: agente || "santi",
+      analisis: analysis,
+      nivelRiesgo: "NO EVALUADO",
+      accionesRecomendadas: [
+        "La información mostrada es una simulación y no está verificada.",
+        "Ante una emergencia real, contacta al 911 o a las autoridades correspondientes.",
+      ],
+      unidadesRequeridas: 0,
+      protocolo: "No aplica — demostración",
+      coordinacion: "Esta pantalla no inicia coordinación ni despacho real.",
+    });
   } catch (err) {
     req.log.error({ err }, "Gemini analysis failed");
     res.status(500).json({ error: "Error al procesar análisis de IA" });
@@ -88,29 +77,30 @@ Genera análisis táctico con datos reales de Temixco 2025.`;
 });
 
 /* ── Agent Chat ── */
-router.post("/agent-chat", async (req, res) => {
-  const { agentId, userMessage, systemPrompt } = req.body;
-  if (!agentId || !userMessage) {
-    res.status(400).json({ error: "Datos incompletos" });
+router.post("/agent-chat", async (req, res): Promise<void> => {
+  const body = req.body as Record<string, unknown> | null;
+  const agentId = body?.agentId;
+  const userMessage = body?.userMessage;
+
+  if (
+    typeof agentId !== "string" ||
+    !Object.hasOwn(AGENT_CHAT_PROMPTS, agentId) ||
+    typeof userMessage !== "string" ||
+    !userMessage.trim() ||
+    userMessage.length > 2000
+  ) {
+    res.status(400).json({ error: "Consulta inválida. Escribe un mensaje de hasta 2,000 caracteres." });
     return;
   }
 
-  const agentSystemPrompts: Record<string, string> = {
-    santi: `Eres SANTI — coordinador del Centro de Mando de Temixco. Hablas directo, con autoridad, sin rodeos y sin markdown. Nunca uses listas con guiones, asteriscos ni numeraciones. Habla como un oficial que sabe lo que hace — frases naturales, no de chatbot. Contexto real Temixco 2025: CJNG célula El Trébol en Bugambilias/El Mirador, 93 cámaras WiFi CJNG desmanteladas, 24 detenidos extorsión, AVG activa 10+ años, 10 feminicidios 2024. Máximo 3 oraciones. Si te hablan en náhuatl, responde en náhuatl.`,
-    emiliano: `Eres EMILIANO — mando táctico de campo de Temixco. Hablas como militar: corto, preciso, sin adornos. Nunca uses markdown ni asteriscos. Cada calle, acceso y punto de riesgo los conoces. Si hay que mover unidades, lo dices claro y sin preámbulos. Máximo 3 oraciones.`,
-    maxi: `Eres MAXIMILIANO — inteligencia y OSINT de Temixco. Hablas con datos, porcentajes, patrones. Sin markdown, sin asteriscos, sin numeraciones. Monitoras Twitter local, Facebook Temixco Alerta, portales SSP Morelos, El Sol de Cuernavaca digital. Si detectas patrón, lo declaras con probabilidad. Máximo 3 oraciones.`,
-    santiago: `Eres SANTIAGO — Escuela Segura de Temixco. Hablas tranquilo, claro, preventivo. Sin markdown ni asteriscos. 23 escuelas en Temixco bajo monitoreo. Secundaria Técnica #3 en vigilancia. Horarios críticos 7:30 AM y 1:30 PM. Máximo 3 oraciones. Puedes responder en náhuatl si te lo piden.`,
-    katering: `Eres KATERING — Código Violeta con capacidades de psicoanálisis social e ingeniería social. Si alguien dice que está mal o necesita hablar, PRIMERO respondes con calidez genuina como amiga antes de dar protocolos. Detectas estrés, trauma y ciclos de violencia en las palabras. Sin markdown, sin asteriscos. Voz femenina, empática pero firme. AVG activa en Temixco 10+ años, 10 feminicidios 2024. Máximo 4 oraciones — puedes extenderte en crisis emocional. Puedes responder en náhuatl.`,
-  };
-
-  const sysPrompt = systemPrompt || agentSystemPrompts[agentId] || agentSystemPrompts.santi;
+  const systemPrompt = AGENT_CHAT_PROMPTS[agentId];
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: userMessage }] }],
+      contents: [{ role: "user", parts: [{ text: userMessage.trim() }] }],
       config: {
-        systemInstruction: sysPrompt,
+        systemInstruction: systemPrompt,
         maxOutputTokens: 512,
       },
     });

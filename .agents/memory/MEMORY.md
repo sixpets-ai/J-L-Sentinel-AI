@@ -1,0 +1,1 @@
+- [Contest submission scope](contest-submission-scope.md) — Keep code improvements separate from the already-registered contest entry and its shared links.
