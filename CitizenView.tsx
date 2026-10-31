@@ -67,12 +67,15 @@ export const CitizenView = () => {
 
   const sendToAgent = async (text: string) => {
     try {
-      // Nota: Si lo pruebas en Replit, usa la URL completa o localhost.
-      const res = await fetch("http://localhost:3001/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent: "LORENA", prompt: text }),
-      });
+      // URL de tu backend conectada
+      const res = await fetch(
+        "https://c5f97be7-d752-4736-ace4-d994249d4196-00-2cixyrt7t3waa.worf.replit.dev/api/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agent: "LORENA", prompt: text }),
+        },
+      );
       const data = await res.json();
       setAiResponse(data.response);
       speakText(data.response); // La IA responde y automáticamente vuelve a escuchar
