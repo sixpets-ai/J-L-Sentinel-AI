@@ -43,7 +43,6 @@
     "@replit/vite-plugin-runtime-error-modal": "catalog:",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/react-query": "catalog:",
     "@types/leaflet": "^1.9.22",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
@@ -76,6 +75,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@tanstack/react-query": "catalog:",
     "leaflet": "^1.9.4"
   }
 }

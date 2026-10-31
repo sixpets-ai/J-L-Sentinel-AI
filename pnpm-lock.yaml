@@ -161,7 +161,7 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       '@tanstack/react-query':
-        specifier: 'catalog:'
+        specifier: ^5.28.14
         version: 5.90.21(react@18.3.1)
       axios:
         specifier: ^1.6.8
@@ -444,6 +444,9 @@ importers:
 
   artifacts/santi:
     dependencies:
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.21(react@19.1.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -547,9 +550,6 @@ importers:
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.2.1(vite@7.3.2(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
-      '@tanstack/react-query':
-        specifier: 'catalog:'
-        version: 5.90.21(react@19.1.0)
       '@types/leaflet':
         specifier: ^1.9.22
         version: 1.9.22

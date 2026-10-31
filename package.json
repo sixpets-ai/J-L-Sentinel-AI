@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.2.1",
-    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-query": "^5.28.14",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
     "express": "^4.19.2",
