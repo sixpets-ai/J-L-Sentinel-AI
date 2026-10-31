@@ -33,7 +33,7 @@ paths:
     post:
       operationId: analyzeIncident
       tags: [santi]
-      summary: Analyze incident with Gemini AI and generate tactical report
+      summary: Generate a neutral, unverified demo summary
       requestBody:
         required: true
         content:
@@ -42,7 +42,7 @@ paths:
               $ref: "#/components/schemas/IncidentAnalysisInput"
       responses:
         "200":
-          description: AI tactical analysis
+          description: AI-generated demo summary; not a risk or operational assessment
           content:
             application/json:
               schema:

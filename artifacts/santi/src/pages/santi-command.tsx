@@ -7,7 +7,8 @@ import {
   speakAsAgent, stopAgentSpeech,
 } from "@/lib/agent-speech";
 import { useSpeechDictation } from "@/hooks/use-speech-dictation";
-import { DemoModuleDialog, DEMO_MODULES, PanicDemoDialog, type DemoModuleId } from "@/components/demo-module-dialog";
+import { DemoModuleDialog, PanicDemoDialog } from "@/components/demo-module-dialog";
+import { DEMO_MODULES, type DemoModuleId } from "@/components/demo-modules";
 
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 
@@ -27,10 +28,6 @@ const CRIME_TYPES = [
   "Extorsión", "Arma o disparos", "Persona no localizada",
   "Seguridad escolar", "Amenazas", "Otra observación",
 ];
-
-const RISK_COLOR: Record<string, string> = {
-  "NO EVALUADO": "#AAB8C2",
-};
 
 const TYPE_AGENT: Record<string, AgentId> = {
   "Violencia familiar": "katering", "Seguridad escolar": "santiago",
@@ -578,7 +575,7 @@ export default function SantiCommand() {
                     </div>
                   );
                 })}
-                {folioList.length===0&&<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#2A4A6A",textAlign:"center",marginTop:16,lineHeight:1.8}}>Sin folios registrados<br/>Envía un reporte para comenzar</div>}
+                {folioList.length===0&&<div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7189A0",textAlign:"center",marginTop:16,lineHeight:1.8}}>Sin borradores en esta sesión<br/>Los datos de la demo no son registros oficiales</div>}
               </div>
             </div>
           </aside>
@@ -668,30 +665,25 @@ export default function SantiCommand() {
                       <div style={{animation:"fade-up .4s ease"}}>
                         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8,paddingBottom:8,borderBottom:"1px solid rgba(200,168,75,.1)"}}>
                           <div style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#C8A84B",letterSpacing:.5}}>{currentFolio.folio}</div>
-                          <div style={{padding:"2px 8px",borderRadius:999,background:`${RISK_COLOR[aiAnalysis.nivelRiesgo]||"#C8A84B"}18`,border:`1px solid ${RISK_COLOR[aiAnalysis.nivelRiesgo]||"#C8A84B"}40`,fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,color:RISK_COLOR[aiAnalysis.nivelRiesgo]||"#C8A84B"}}>
-                            RIESGO: {aiAnalysis.nivelRiesgo}
+                          <div style={{padding:"2px 8px",borderRadius:999,background:"rgba(200,168,75,.08)",border:"1px solid rgba(200,168,75,.2)",fontFamily:"'Orbitron',monospace",fontSize:9,fontWeight:700,color:"#C8A84B"}}>
+                            DEMO · NO VERIFICADO
                           </div>
-                          <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#6A90B8"}}>{aiAnalysis.protocolo}</div>
                           <div style={{marginLeft:"auto",fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:`${AGENTS[currentFolio.agente].color}`,letterSpacing:.5}}>{AGENTS[currentFolio.agente].emoji} {AGENTS[currentFolio.agente].name}</div>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:10}}>
                           <div>
-                            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:5}}>ANÁLISIS EJECUTIVO · GEMINI 2.5</div>
+                            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:5}}>RESUMEN DE IA · NO VERIFICADO</div>
                             <div style={{fontSize:11,color:"#8AAAC8",lineHeight:1.65,marginBottom:8}}>{aiAnalysis.analisis}</div>
-                            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:5}}>COORDINACIÓN INSTITUCIONAL</div>
-                            <div style={{fontSize:10,color:"#6A90B8",lineHeight:1.5}}>{aiAnalysis.coordinacion}</div>
+                            <div style={{fontSize:9,color:"#7189A0",lineHeight:1.5}}>El resumen no verifica hechos, evalúa riesgo ni activa servicios. Si existe una emergencia real, contacta directamente al 911.</div>
                           </div>
                           <div>
-                            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:5}}>ACCIONES RECOMENDADAS</div>
+                            <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:7,color:"#2A4A6A",letterSpacing:1.5,marginBottom:5}}>NOTAS DE SEGURIDAD</div>
                             {(aiAnalysis.accionesRecomendadas||[]).map((a:string,i:number)=>(
                               <div key={i} style={{display:"flex",gap:7,marginBottom:5,padding:"5px 8px",background:"rgba(0,0,0,.35)",border:"1px solid rgba(200,168,75,.1)",borderRadius:6}}>
                                 <span style={{fontFamily:"'Orbitron',monospace",fontSize:10,fontWeight:700,color:"#C8A84B",flexShrink:0}}>0{i+1}</span>
                                 <span style={{fontSize:10,fontWeight:600,lineHeight:1.4}}>{a}</span>
                               </div>
                             ))}
-                            <div style={{marginTop:6,fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#3A5A7A"}}>
-                              Unidades requeridas: <span style={{color:"#00E5FF",fontWeight:700}}>{aiAnalysis.unidadesRequeridas}</span>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -747,7 +739,11 @@ export default function SantiCommand() {
                 {activeTab==="log"&&(
                   <div style={{padding:"8px 14px",overflowY:"auto",height:"100%"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                      {activity.map((a,i)=>(
+                      {activity.length===0?(
+                        <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"#7189A0",textAlign:"center",marginTop:18,lineHeight:1.7}}>
+                          Sin actividad registrada en la base de datos de esta demo.
+                        </div>
+                      ):activity.map((a,i)=>(
                         <div key={i} style={{display:"flex",gap:8,padding:"4px 0",borderBottom:"1px solid rgba(200,168,75,.05)",animation:"slide-in .2s ease"}}>
                           <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"#2A4A6A",flexShrink:0,minWidth:32}}>{a.time}</span>
                           <div style={{width:5,height:5,borderRadius:"50%",flexShrink:0,marginTop:5,background:a.color,boxShadow:`0 0 4px ${a.color}`}}/>

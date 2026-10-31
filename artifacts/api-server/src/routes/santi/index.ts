@@ -147,9 +147,9 @@ router.get("/stats", async (req, res) => {
     const critical = criticalResult?.count ?? 0;
     const recentReports = await db.select().from(incidentReports).orderBy(desc(incidentReports.createdAt)).limit(5);
     const colorMap: Record<string, string> = {
-      "Robo / Asalto": "#FF6D00", "Narcomenudeo": "#FF1744",
+      "Robo / Asalto": "#FF6D00", "Observación comunitaria": "#C8A84B",
       "Violencia familiar": "#E91E8C", "Disparos activos": "#FF1744",
-      "Extorsión": "#FF6D00", "Desaparición": "#9C27B0",
+      "Extorsión": "#FF6D00", "Persona no localizada": "#9C27B0",
       "Vehículo sospechoso": "#00E5FF", "Seguridad escolar": "#00E5FF",
       "Amenazas": "#FF1744",
     };
