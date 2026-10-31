@@ -1,1 +1,2 @@
 - [Contest submission scope](contest-submission-scope.md) — Keep code improvements separate from the already-registered contest entry and its shared links.
+- [SANTI Vite Fast Refresh](santi-vite-hmr.md) — Keep exported static demo data separate from React component modules to avoid HMR invalidation.

@@ -119,7 +119,7 @@ export function useHealthCheck<
 }
 
 /**
- * @summary Analyze incident with Gemini AI and generate tactical report
+ * @summary Generate a neutral, unverified demo summary
  */
 export const getAnalyzeIncidentUrl = () => {
   return `/api/santi/analyze`;
@@ -182,7 +182,7 @@ export type AnalyzeIncidentMutationBody = BodyType<IncidentAnalysisInput>;
 export type AnalyzeIncidentMutationError = ErrorType<unknown>;
 
 /**
- * @summary Analyze incident with Gemini AI and generate tactical report
+ * @summary Generate a neutral, unverified demo summary
  */
 export const useAnalyzeIncident = <
   TError = ErrorType<unknown>,

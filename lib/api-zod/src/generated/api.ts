@@ -16,7 +16,7 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary Analyze incident with Gemini AI and generate tactical report
+ * @summary Generate a neutral, unverified demo summary
  */
 export const AnalyzeIncidentBody = zod.object({
   tipo: zod.string(),
