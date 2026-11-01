@@ -5,7 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ActivityItem } from "./activityItem";
+import type { ActivityItem } from './activityItem';
 
 export interface OperationalStats {
   totalReports: number;

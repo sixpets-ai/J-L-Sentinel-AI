@@ -48,6 +48,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/IncidentAnalysis"
 
+  /santi/translate-ui:
+    post:
+      operationId: translateSantiUi
+      tags: [santi]
+      summary: Translate SANTI interface labels with Gemini
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SantiUiTranslationInput"
+      responses:
+        "200":
+          description: Translated interface labels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SantiUiTranslation"
+
   /santi/reports:
     get:
       operationId: listReports
@@ -250,9 +269,38 @@ components:
           type: string
         agente:
           type: string
+        languageCode:
+          type: string
+          enum: [es, en, fr, de, zh, ru, nahuatl, maya, mixteco, zapoteco, totonaco]
       required:
         - tipo
         - folio
+
+    SantiUiTranslationInput:
+      type: object
+      properties:
+        languageCode:
+          type: string
+          enum: [en, fr, de, zh, ru, nahuatl, maya, mixteco, zapoteco, totonaco]
+        strings:
+          type: object
+          maxProperties: 50
+          additionalProperties:
+            type: string
+            maxLength: 500
+      required:
+        - languageCode
+        - strings
+
+    SantiUiTranslation:
+      type: object
+      properties:
+        translations:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - translations
 
     IncidentAnalysis:
       type: object

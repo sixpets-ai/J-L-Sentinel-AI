@@ -9,6 +9,7 @@ import {
 export function useSpeechDictation(
   onTranscript: (text: string) => void,
   onStart?: () => void,
+  recognitionLocale = "es-MX",
 ) {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
@@ -28,7 +29,7 @@ export function useSpeechDictation(
 
     onStartRef.current?.();
     setError("");
-    recognition.lang = "es-MX";
+    recognition.lang = recognitionLocale;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.onresult = (event) => {
@@ -55,7 +56,7 @@ export function useSpeechDictation(
       setListening(false);
       setError("No se pudo iniciar el micrófono. Puedes escribir tu mensaje.");
     }
-  }, []);
+  }, [recognitionLocale]);
 
   const stop = useCallback(() => recognitionRef.current?.stop(), []);
   const toggle = useCallback(() => {

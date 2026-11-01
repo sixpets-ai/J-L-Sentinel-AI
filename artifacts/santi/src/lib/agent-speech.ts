@@ -33,26 +33,30 @@ const voiceProfiles: Record<string, AgentVoiceProfile> = {
 const feminineVoiceNames = /female|woman|femenina|mujer|google.*español|español.*google|paulina|m[oó]nica|sabina|helena|luc[ií]a/i;
 const masculineVoiceNames = /male|man|masculino|hombre|jorge|diego|carlos|antonio|juan/i;
 
-function chooseSpanishVoice(
+function chooseLanguageVoice(
   voices: SpeechSynthesisVoice[],
+  locale: string,
   gender: AgentVoiceProfile["gender"],
 ): SpeechSynthesisVoice | undefined {
-  const spanishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith("es"));
-  const candidates = spanishVoices.length > 0 ? spanishVoices : voices;
+  const normalizedLocale = locale.toLowerCase();
+  const language = normalizedLocale.split("-")[0];
+  const candidates = voices.filter((voice) => {
+    const voiceLocale = voice.lang.toLowerCase();
+    return voiceLocale === normalizedLocale || voiceLocale.split("-")[0] === language;
+  });
+  if (candidates.length === 0) return undefined;
   const namePattern = gender === "feminine" ? feminineVoiceNames : masculineVoiceNames;
 
   const genderMatch = candidates.find((voice) => namePattern.test(voice.name));
   if (genderMatch) return genderMatch;
-  if (gender === "feminine") {
-    return candidates.find((voice) => voice.lang.toLowerCase() === "es-mx") ?? candidates[0];
-  }
-  return candidates[0];
+  return candidates.find((voice) => voice.lang.toLowerCase() === normalizedLocale) ?? candidates[0];
 }
 
 export function speakAsAgent(
   text: string,
   agentId: string,
   onEnd: () => void,
+  locale = "es-MX",
 ): boolean {
   if (
     typeof window === "undefined" ||
@@ -62,10 +66,10 @@ export function speakAsAgent(
 
   const profile = voiceProfiles[agentId] ?? voiceProfiles.santi;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "es-MX";
+  utterance.lang = locale;
   utterance.rate = profile.rate;
   utterance.pitch = agentId === "katering" ? 1.2 : profile.pitch;
-  utterance.voice = chooseSpanishVoice(window.speechSynthesis.getVoices(), profile.gender) ?? null;
+  utterance.voice = chooseLanguageVoice(window.speechSynthesis.getVoices(), locale, profile.gender) ?? null;
   utterance.onend = onEnd;
   utterance.onerror = onEnd;
 

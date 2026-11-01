@@ -1,0 +1,160 @@
+export const LANGUAGES = [
+  {
+    code: "es",
+    label: "Español",
+    promptLanguage: "español de México",
+    htmlLang: "es-MX",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: false,
+  },
+  {
+    code: "en",
+    label: "English",
+    promptLanguage: "English",
+    htmlLang: "en-US",
+    recognitionLocale: "en-US",
+    speechLocale: "en-US",
+    indigenous: false,
+  },
+  {
+    code: "fr",
+    label: "Français",
+    promptLanguage: "français",
+    htmlLang: "fr-FR",
+    recognitionLocale: "fr-FR",
+    speechLocale: "fr-FR",
+    indigenous: false,
+  },
+  {
+    code: "de",
+    label: "Deutsch",
+    promptLanguage: "allemand",
+    htmlLang: "de-DE",
+    recognitionLocale: "de-DE",
+    speechLocale: "de-DE",
+    indigenous: false,
+  },
+  {
+    code: "zh",
+    label: "中文 · 普通话",
+    promptLanguage: "chino mandarín simplificado",
+    htmlLang: "zh-CN",
+    recognitionLocale: "zh-CN",
+    speechLocale: "zh-CN",
+    indigenous: false,
+  },
+  {
+    code: "ru",
+    label: "Русский",
+    promptLanguage: "ruso",
+    htmlLang: "ru-RU",
+    recognitionLocale: "ru-RU",
+    speechLocale: "ru-RU",
+    indigenous: false,
+  },
+  {
+    code: "nahuatl",
+    label: "Náhuatl · variante por confirmar",
+    promptLanguage: "náhuatl (variante no especificada; marca cualquier incertidumbre)",
+    htmlLang: "nah",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: true,
+  },
+  {
+    code: "maya",
+    label: "Maya · variante por confirmar",
+    promptLanguage: "maya (variante no especificada; marca cualquier incertidumbre)",
+    htmlLang: "maya",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: true,
+  },
+  {
+    code: "mixteco",
+    label: "Mixteco · variante por confirmar",
+    promptLanguage: "mixteco (variante no especificada; marca cualquier incertidumbre)",
+    htmlLang: "mix",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: true,
+  },
+  {
+    code: "zapoteco",
+    label: "Zapoteco · variante por confirmar",
+    promptLanguage: "zapoteco (variante no especificada; marca cualquier incertidumbre)",
+    htmlLang: "zap",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: true,
+  },
+  {
+    code: "totonaco",
+    label: "Totonaco · variante por confirmar",
+    promptLanguage: "totonaco (variante no especificada; marca cualquier incertidumbre)",
+    htmlLang: "tku",
+    recognitionLocale: "es-MX",
+    speechLocale: "es-MX",
+    indigenous: true,
+  },
+] as const;
+
+export type LanguageCode = (typeof LANGUAGES)[number]["code"];
+export type SupportedLanguage = (typeof LANGUAGES)[number];
+
+export function getLanguage(code: string): SupportedLanguage {
+  return LANGUAGES.find((language) => language.code === code) ?? LANGUAGES[0];
+}
+
+export const DEFAULT_UI_STRINGS = {
+  language: "IDIOMA",
+  demoBadge: "DEMO · SIN ENLACE INSTITUCIONAL",
+  connectedUnits: "UNIDADES CONECTADAS",
+  databaseRecords: "REGISTROS EN BD",
+  risk: "RIESGO",
+  response: "RESPUESTA",
+  noOfficialServices: "SIN SERVICIOS OFICIALES",
+  agentsHeading: "Agentes IA · Haz clic para consultar",
+  voiceActive: "RESPUESTAS POR VOZ ACTIVAS",
+  voiceEnable: "ACTIVAR RESPUESTAS POR VOZ",
+  folioHeading: "REGISTRO DE FOLIOS",
+  emptyFolios: "Sin borradores en esta sesión",
+  tabReport: "📋 REPORTE",
+  tabAnalysis: "⚡ ANÁLISIS IA",
+  tabTrace: "🗺 TRAZABILIDAD",
+  tabLog: "📡 BITÁCORA",
+  incidentType: "Tipo de incidente *",
+  sectorPlaceholder: "Sector o referencia general (opcional)",
+  selectedLocation: "Ubicación seleccionada manualmente en el mapa.",
+  noLocation: "Sin ubicación. Puedes elegir un punto en el mapa; no se usa GPS.",
+  reportDescription: "Descripción ficticia para la demostración...",
+  stopDictation: "DETENER",
+  startDictation: "MIC",
+  saveDraft: "GUARDAR BORRADOR DEMO",
+  processingDraft: "PROCESANDO DEMO...",
+  panicButton: "SIMULAR CÓDIGO VIOLETA",
+  welcomeKicker: "DEMOSTRACIÓN INTERACTIVA · DATOS SIMULADOS",
+  welcomeTitle: "Bienvenido a SANTI NEXUS",
+  welcomeDescription:
+    "SANTI y sus agentes son asistentes de inteligencia artificial. Esta demostración no está conectada a servicios oficiales, unidades ni alertas reales.",
+  welcomePrivacy:
+    "Puedes escribir o dictar tu consulta. El micrófono solo se activa cuando lo pulsas; el navegador procesa la transcripción. No incluyas datos personales reales ni detalles de incidentes activos.",
+  listenWelcome: "ESCUCHAR BIENVENIDA",
+  continueSilent: "CONTINUAR EN SILENCIO",
+  chatGreeting:
+    "Soy un asistente de IA de esta demostración. ¿Qué información general necesitas?",
+  chatSend: "ENVIAR",
+  chatPlaceholder: "Escribe tu consulta...",
+  chatNotice:
+    "El texto se procesa con IA. El micrófono solo se activa al pulsarlo. No ingreses datos personales reales ni información de incidentes activos.",
+  translationNotice:
+    "Traducción asistida por IA; no validada por hablantes de la variante local. La lectura de voz se ofrece en español, sin imitar acentos indígenas.",
+  translationLoading: "TRADUCIENDO INTERFAZ…",
+  offline: "SIN CONEXIÓN · MODO LOCAL",
+  online: "EN LÍNEA",
+  unsupportedSpeech: "El dictado por voz no está disponible en este navegador.",
+} as const;
+
+export type SantiUiKey = keyof typeof DEFAULT_UI_STRINGS;
+export type SantiUiStrings = Record<SantiUiKey, string>;

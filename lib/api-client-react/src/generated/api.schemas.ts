@@ -9,12 +9,59 @@ export interface HealthStatus {
   status: string;
 }
 
+export type IncidentAnalysisInputLanguageCode = typeof IncidentAnalysisInputLanguageCode[keyof typeof IncidentAnalysisInputLanguageCode];
+
+
+export const IncidentAnalysisInputLanguageCode = {
+  es: 'es',
+  en: 'en',
+  fr: 'fr',
+  de: 'de',
+  zh: 'zh',
+  ru: 'ru',
+  nahuatl: 'nahuatl',
+  maya: 'maya',
+  mixteco: 'mixteco',
+  zapoteco: 'zapoteco',
+  totonaco: 'totonaco',
+} as const;
+
 export interface IncidentAnalysisInput {
   tipo: string;
   descripcion?: string;
   sector?: string;
   folio: string;
   agente?: string;
+  languageCode?: IncidentAnalysisInputLanguageCode;
+}
+
+export type SantiUiTranslationInputLanguageCode = typeof SantiUiTranslationInputLanguageCode[keyof typeof SantiUiTranslationInputLanguageCode];
+
+
+export const SantiUiTranslationInputLanguageCode = {
+  en: 'en',
+  fr: 'fr',
+  de: 'de',
+  zh: 'zh',
+  ru: 'ru',
+  nahuatl: 'nahuatl',
+  maya: 'maya',
+  mixteco: 'mixteco',
+  zapoteco: 'zapoteco',
+  totonaco: 'totonaco',
+} as const;
+
+export type SantiUiTranslationInputStrings = {[key: string]: string};
+
+export interface SantiUiTranslationInput {
+  languageCode: SantiUiTranslationInputLanguageCode;
+  strings: SantiUiTranslationInputStrings;
+}
+
+export type SantiUiTranslationTranslations = {[key: string]: string};
+
+export interface SantiUiTranslation {
+  translations: SantiUiTranslationTranslations;
 }
 
 export interface IncidentAnalysis {
@@ -115,3 +162,4 @@ export interface GeminiImageResult {
 export interface GeminiError {
   error: string;
 }
+
