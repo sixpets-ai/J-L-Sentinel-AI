@@ -1,7 +1,6 @@
 import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 const patrolIcon = L.divIcon({
   className: "custom-icon",
@@ -18,7 +17,7 @@ export const TacticalMap = () => {
   return (
     <div style={{ height: "100%", width: "100%", backgroundColor: "#050505" }}>
       <MapContainer
-        center={[19.4326, -99.1332]} // Centro CDMX
+        center={[19.4326, -99.1332]}
         zoom={12}
         style={{
           height: "100%",
@@ -26,14 +25,12 @@ export const TacticalMap = () => {
           filter:
             "invert(100%) hue-rotate(180deg) brightness(90%) contrast(120%)",
         }}
-        zoomControl={false}
+        zoomControl={true}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
         <Marker position={[19.4326, -99.1332]} icon={patrolIcon}>
           <Popup>Unidad 14 - En ruta</Popup>
         </Marker>
-
         <Marker position={[19.433, -99.134]} icon={officerIcon}>
           <Popup>Oficiales desplegados</Popup>
         </Marker>

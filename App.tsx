@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { CitizenView } from "./CitizenView";
 import { CommandView } from "./CommandView";
 
+/* © 2026 José Sierra / J&L Sentinel AI. Todos los derechos reservados. Software de apoyo a la decisión. No sustituye servicios de emergencia reales. */
+
 function App() {
   const [view, setView] = useState<"citizen" | "command">("citizen");
 
