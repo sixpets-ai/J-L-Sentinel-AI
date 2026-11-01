@@ -5,7 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { GeminiMessage } from "./geminiMessage";
+import type { GeminiMessage } from './geminiMessage';
 
 export interface GeminiConversationWithMessages {
   id: number;

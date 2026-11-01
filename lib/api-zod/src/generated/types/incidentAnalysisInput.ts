@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { IncidentAnalysisInputLanguageCode } from './incidentAnalysisInputLanguageCode';
 
 export interface IncidentAnalysisInput {
   tipo: string;
@@ -12,4 +13,5 @@ export interface IncidentAnalysisInput {
   sector?: string;
   folio: string;
   agente?: string;
+  languageCode?: IncidentAnalysisInputLanguageCode;
 }

@@ -2,7 +2,12 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { incidentReports } from "@workspace/db";
 import { ai } from "@workspace/integrations-gemini-ai";
-import { AnalyzeIncidentBody, CreateReportBody } from "@workspace/api-zod";
+import {
+  AnalyzeIncidentBody,
+  CreateReportBody,
+  TranslateSantiUiBody,
+  TranslateSantiUiResponse,
+} from "@workspace/api-zod";
 import { desc, count, eq } from "drizzle-orm";
 
 const router = Router();
@@ -17,6 +22,20 @@ const AGENT_CHAT_PROMPTS: Record<string, string> = {
   katering: `Eres KATERING, una asistente de IA de demostración con tono cálido, empático y respetuoso. Escucha sin juzgar, usa frases breves y ofrece a la persona elegir si desea continuar; no insistas ni pidas información sensible. No diagnostiques, manipules ni finjas ser psicóloga o personal de emergencia. No uses PNL, presión ni engaño. Si existe peligro inmediato, sugiere contactar directamente al 911 o a un servicio profesional. Máximo 4 oraciones, sin markdown.`,
 };
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  es: "español de México",
+  en: "inglés",
+  fr: "francés",
+  de: "alemán",
+  zh: "chino mandarín simplificado",
+  ru: "ruso",
+  nahuatl: "náhuatl (variante no especificada)",
+  maya: "maya (variante no especificada)",
+  mixteco: "mixteco (variante no especificada)",
+  zapoteco: "zapoteco (variante no especificada)",
+  totonaco: "totonaco (variante no especificada)",
+};
+
 router.post("/analyze", async (req, res) => {
   const parsed = AnalyzeIncidentBody.safeParse(req.body);
   if (!parsed.success) {
@@ -24,7 +43,8 @@ router.post("/analyze", async (req, res) => {
     return;
   }
 
-  const { tipo, descripcion, sector, folio, agente } = parsed.data;
+  const { tipo, descripcion, sector, folio, agente, languageCode = "es" } = parsed.data;
+  const languageName = LANGUAGE_NAMES[languageCode] ?? LANGUAGE_NAMES.es;
 
   const prompt = `Consulta enviada a una demostración de SANTI:
 FOLIO: ${folio}
@@ -33,7 +53,8 @@ SECTOR INDICADO: ${sector || "Sin especificar"}
 DESCRIPCIÓN NO VERIFICADA: ${descripcion || "Sin descripción adicional"}
 AGENTE DE DEMOSTRACIÓN: ${agente || "SANTI"}
 
-Resume de forma neutral solo los datos proporcionados. No los trates como hechos confirmados.`;
+Resume de forma neutral solo los datos proporcionados. No los trates como hechos confirmados.
+Escribe el resumen en ${languageName}.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -81,34 +102,112 @@ router.post("/agent-chat", async (req, res): Promise<void> => {
   const body = req.body as Record<string, unknown> | null;
   const agentId = body?.agentId;
   const userMessage = body?.userMessage;
+  const languageCode = body?.languageCode ?? "es";
 
   if (
     typeof agentId !== "string" ||
     !Object.hasOwn(AGENT_CHAT_PROMPTS, agentId) ||
     typeof userMessage !== "string" ||
     !userMessage.trim() ||
-    userMessage.length > 2000
+    userMessage.length > 2000 ||
+    typeof languageCode !== "string" ||
+    !Object.hasOwn(LANGUAGE_NAMES, languageCode)
   ) {
     res.status(400).json({ error: "Consulta inválida. Escribe un mensaje de hasta 2,000 caracteres." });
     return;
   }
 
   const systemPrompt = AGENT_CHAT_PROMPTS[agentId];
+  const languageName = LANGUAGE_NAMES[languageCode];
+  const indigenousLanguage = ["nahuatl", "maya", "mixteco", "zapoteco", "totonaco"].includes(languageCode);
+  const outputInstructions = indigenousLanguage
+    ? `Responde de forma breve en ${languageName}, con una traducción asistida y sin inventar una variante regional. Devuelve JSON válido con dos propiedades: "response" con la respuesta en la lengua seleccionada y "speechText" con el equivalente en español de México para lectura de voz. No imites acentos indígenas ni afirmes que la traducción fue validada por hablantes.`
+    : `Responde de forma breve en ${languageName}. Devuelve JSON válido con dos propiedades: "response" con tu respuesta y "speechText" con el mismo texto para lectura de voz.`;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [{ role: "user", parts: [{ text: userMessage.trim() }] }],
       config: {
-        systemInstruction: systemPrompt,
-        maxOutputTokens: 512,
+        systemInstruction: `${systemPrompt}\n\n${outputInstructions}`,
+        responseMimeType: "application/json",
       },
     });
 
-    res.json({ response: response.text?.trim() || "Sin respuesta del sistema neuronal." });
+    let generated: { response?: unknown; speechText?: unknown };
+    try {
+      generated = JSON.parse(response.text ?? "") as typeof generated;
+    } catch {
+      throw new Error("Gemini devolvió una respuesta no válida.");
+    }
+    if (typeof generated.response !== "string" || !generated.response.trim()) {
+      throw new Error("Gemini no devolvió una respuesta traducida.");
+    }
+
+    res.json({
+      response: generated.response.trim().slice(0, 2000),
+      speechText: typeof generated.speechText === "string"
+        ? generated.speechText.trim().slice(0, 2000)
+        : generated.response.trim().slice(0, 2000),
+      translationAssisted: indigenousLanguage,
+    });
   } catch (err) {
     req.log.error({ err }, "Agent chat failed");
     res.status(500).json({ error: "Error de conexión con el agente IA" });
+  }
+});
+
+router.post("/translate-ui", async (req, res): Promise<void> => {
+  const parsed = TranslateSantiUiBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Idioma o textos de interfaz no válidos." });
+    return;
+  }
+
+  const { languageCode, strings } = parsed.data;
+  const languageName = LANGUAGE_NAMES[languageCode];
+  if (!languageName || Object.keys(strings).length === 0) {
+    res.status(400).json({ error: "Se requiere un idioma y al menos un texto." });
+    return;
+  }
+
+  const indigenousLanguage = ["nahuatl", "maya", "mixteco", "zapoteco", "totonaco"].includes(languageCode);
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{
+        role: "user",
+        parts: [{ text: JSON.stringify(strings) }],
+      }],
+      config: {
+        systemInstruction: indigenousLanguage
+          ? `Traduce los valores de este objeto de interfaz al ${languageName}. Mantén exactamente las claves JSON, las cifras y los marcadores de posición. La variante indígena no está especificada: no inventes una variante ni imites acentos; si no puedes traducir una frase con confianza, conserva su valor original. Devuelve únicamente JSON válido con la forma {"translations":{...}}.`
+          : `Traduce los valores de este objeto de interfaz al ${languageName}. Mantén exactamente las claves JSON, las cifras y los marcadores de posición. Devuelve únicamente JSON válido con la forma {"translations":{...}}.`,
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192,
+      },
+    });
+
+    const generated = JSON.parse(response.text ?? "") as { translations?: unknown };
+    const validated = TranslateSantiUiResponse.safeParse(generated);
+    if (!validated.success) {
+      throw new Error("Gemini devolvió una estructura de traducción no válida.");
+    }
+
+    const expectedKeys = Object.keys(strings);
+    const translations = validated.data.translations;
+    const missingKeys = expectedKeys.filter((key) => !translations[key]?.trim());
+    if (missingKeys.length > 0) {
+      throw new Error("Gemini omitió algunos textos de la interfaz.");
+    }
+
+    res.json({ translations: Object.fromEntries(
+      expectedKeys.map((key) => [key, translations[key].trim().slice(0, 500)]),
+    ) });
+  } catch (err) {
+    req.log.error({ err }, "SANTI interface translation failed");
+    res.status(502).json({ error: "No se pudo traducir la interfaz. Inténtalo de nuevo con conexión." });
   }
 });
 
